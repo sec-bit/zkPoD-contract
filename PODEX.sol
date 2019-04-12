@@ -42,8 +42,8 @@ contract PODEX {
     struct PlainRangeReceipt1ForClaim {
         uint256 sessionId;
         address from;
-        uint256 seed2;
-        uint256 k_mkl_root;
+        bytes32 seed2;
+        bytes32 k_mkl_root;
         uint64 count;
         uint256 price;
         uint256 expireAt;
@@ -140,7 +140,7 @@ contract PODEX {
     }
 
     // plain range
-    function submitProof1() public;
+    // function submitProof1() public;
 
     function checkSig1(address addr, PlainRangeReceipt1ForClaim memory r1, Signature memory sig)
         public
@@ -166,13 +166,81 @@ contract PODEX {
         });
     }
 
-    function verifyPath() public;
+    // function verifyPath() public;
 
-    function claim(uint64 _i, uint64 _j, uint256 _kij, uint256[] memory _mkl_path)
+    struct G1Point {
+        uint256 X;
+        uint256 Y;
+    }
+
+    function hashOfTwoSha3(bytes32 _x, bytes32 _y)
+        public
+        view
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_x, _y));
+    }
+
+    function hashOfTwoSha256(bytes32 _x, bytes32 _y)
+        public
+        view
+        returns (bytes32)
+    {
+        return sha256(abi.encodePacked(_x, _y));
+    }
+
+    function log2ub(uint256 _n)
+        public
+        view
+        returns (uint256)   
+    {
+        if (_n == 1) return 0;
+        if (_n % 2 != 0) _n++;
+        return 1 + log2ub(_n / 2);
+    }
+
+    // // for debug
+    // event LogVerifyPath(uint256 _i, uint64 _pos, bytes32 _value);
+    // event LogBeforeBytes32(bytes32 _mkl_path_i, bytes32 _value);
+
+    function verifyPathOfK(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
+        public
+        // view
+        returns (bool)
+    {
+        (bytes32 _value_b) = hashOfTwoSha3(_x, _y);
+        uint256 _depth = log2ub(_ns);
+        if (_mkl_path.length != _depth) {
+            return false;
+        }
+        bytes32 _value = _value_b;
+
+        uint64 _pos = _ij;
+        for (uint256 _i = 0; _i < _depth; _i++) {
+            // emit LogBeforeBytes32(_mkl_path[_i], _value);
+            if (_pos % 2 != 0) {
+                _value = hashOfTwoSha256(_mkl_path[_i], _value);
+            } else {
+                _value = hashOfTwoSha256(_value, _mkl_path[_i]);
+            }
+            _pos /= 2;
+            // emit LogVerifyPath(_i, _pos, _value);
+        }
+        return (_value == _root);
+    }
+
+    uint64 public s_ = 8;
+
+    function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, bytes32[2] memory _tij, bytes32[] memory _mkl_path)
         public
     {
-        verifyPath();
-        // verifyClaim()
+        // loadReceipt();
+
+        SessionRecord memory _sessionRecord = sessionRecords_[_a][msg.sender][_sessionId];
+        
+        require(verifyPathOfK(_tij[0], _tij[1], _i*s_+_j, _sessionRecord.receipt.count*s_, _sessionRecord.receipt.k_mkl_root, _mkl_path));
+
+        // verifyClaim();
     }
 
     function submitProof2() public {
