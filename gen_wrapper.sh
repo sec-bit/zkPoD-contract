@@ -1,0 +1,1 @@
+abigen --abi PODEX.abi --pkg main --type PODEX --out PODEX.go
