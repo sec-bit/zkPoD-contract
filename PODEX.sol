@@ -77,7 +77,8 @@ contract PODEX {
 
 
     uint64 public s_ = 9;
-    
+
+    uint256 internal constant GEN_ORDER = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
 
     // core
 
@@ -259,7 +260,7 @@ contract PODEX {
     // internal or helper
     function hashOfTwoSha3(bytes32 _x, bytes32 _y)
         public
-        view
+        pure
         returns (bytes32)
     {
         return keccak256(abi.encodePacked(_x, _y));
@@ -283,7 +284,7 @@ contract PODEX {
 
     function log2ub(uint256 _n)
         public
-        view
+        pure
         returns (uint256)   
     {
         if (_n == 1) return 0;
@@ -300,33 +301,16 @@ contract PODEX {
 
     function chain(bytes32 seed, uint64 index)
         public
+        pure
         returns (uint256)
     {
         bytes32 _ret = hashOfTwoSha3(seed, index);
-        emit LogBytes32(_ret);
-
-        bytes memory shasum = new bytes(32);
-        uint j;
-        for (j=0; j<32; j++) {
-            shasum[j] = _ret[j];
-        }
-        emit LogBytes(shasum);
-
-        shasum[0] = byte(uint8(shasum[0]) & 63);
-        if(shasum[0] > 0x30) {
-            shasum[0] = byte(uint8(shasum[0]) & 31);
-        }
-        
-        bytes32 revhash;
-        assembly {
-            revhash := mload(add(shasum, 32))
-        }
-        return uint256(revhash);
+        return uint256(_ret) % GEN_ORDER;
     }
 
     function verifyPath(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
         public
-        // view
+        pure
         returns (bool)
     {
         bytes32 _value_b = hashOfTwoSha3(_x, _y);
@@ -352,29 +336,12 @@ contract PODEX {
 
     function convertToBE(bytes32 _in)
         public
-        view
+        pure
         returns (bytes32)
     {
         bytes memory _bytes = new bytes(32);
         for (uint256 j = 0; j < 32; j++) {
             _bytes[j] = _in[31-j];
-        }
-        bytes32 _out;
-        assembly {
-            _out := mload(add(_bytes, 32))
-        }
-        return _out;
-    }
-
-    function convertToBE2(uint256 _in)
-        public
-        view
-        returns (bytes32)
-    {
-        bytes32 _bin = bytes32(_in);
-        bytes memory _bytes = new bytes(32);
-        for (uint256 j = 0; j < 32; j++) {
-            _bytes[j] = _bin[31-j];
         }
         bytes32 _out;
         assembly {
