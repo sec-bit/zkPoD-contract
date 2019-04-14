@@ -305,7 +305,25 @@ contract PODEX {
         returns (uint256)
     {
         bytes32 _ret = hashOfTwoSha3(seed, index);
-        return uint256(_ret) % GEN_ORDER;
+
+        bytes memory shasum = new bytes(32);
+        uint j;
+        for (j=0; j<32; j++) {
+            shasum[j] = _ret[j];
+        }
+
+        shasum[0] = byte(uint8(shasum[0]) & 63);
+        if(shasum[0] > 0x30) {
+            shasum[0] = byte(uint8(shasum[0]) & 31);
+        }
+        
+        bytes32 revhash;
+        assembly {
+            revhash := mload(add(shasum, 32))
+        }
+
+        bytes32 _retMod = bytes32(uint256(revhash) % GEN_ORDER);
+        return uint256(_retMod);
     }
 
     function verifyPath(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
