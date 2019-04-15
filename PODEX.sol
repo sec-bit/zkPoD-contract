@@ -274,14 +274,6 @@ contract PODEX {
         return keccak256(abi.encodePacked(_x, _y));
     }
 
-    function hashOfTwoSha256(bytes32 _x, bytes32 _y)
-        public
-        pure
-        returns (bytes32)
-    {
-        return sha256(abi.encodePacked(_x, _y));
-    }
-
     function log2ub(uint256 _n)
         public
         pure
@@ -342,9 +334,9 @@ contract PODEX {
         for (uint256 _i = 0; _i < _depth; _i++) {
             // emit LogBeforeBytes32(_mkl_path[_i], _value);
             if (_pos % 2 != 0) {
-                _value = hashOfTwoSha256(_mkl_path[_i], _value);
+                _value = hashOfTwoSha3(_mkl_path[_i], _value);
             } else {
-                _value = hashOfTwoSha256(_value, _mkl_path[_i]);
+                _value = hashOfTwoSha3(_value, _mkl_path[_i]);
             }
             _pos /= 2;
             // emit LogVerifyPath(_i, _pos, _value);
