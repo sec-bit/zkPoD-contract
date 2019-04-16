@@ -4,7 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"math/big"
-	"minievm/accounts/abi"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 func main() {
