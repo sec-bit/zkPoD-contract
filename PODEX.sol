@@ -89,9 +89,9 @@ contract PODEX is PublicVar {
             _bltType = BltType.TABLE;
             _bltKey = keccak256(abi.encodePacked(_s, _n, _sigma_mkl_root, _vrf_meta_digest));
         } else {
-            revert();
+            revert("wrong type");
         }
-        require(bulletins_[_bltKey].owner != address(0));
+        require(bulletins_[_bltKey].owner == address(0), "blt occupied");
         Bulletin memory file = Bulletin({
              owner: msg.sender,
              size: _size,
