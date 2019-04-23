@@ -51,6 +51,21 @@ contract PODEX is PublicVar {
         uint256 expireAt;
     }
 
+    struct PlainBatch3ReceiptForClaim {
+        uint256 sessionId;
+        address from;
+        G1Point u0_x0_lgs;
+        G1Point u0d;
+        uint256 price;
+        uint256 expireAt;
+    }
+
+    struct MinSessionRecord {
+        uint256 d;
+        uint256 x0_lgs;
+        uint256 submitAt;
+    }
+
     enum DepositStatus {
         OK,
         CANCELING,
@@ -69,6 +84,9 @@ contract PODEX is PublicVar {
 
     // A => B => SessionId => Receipt
     mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
+
+    mapping (address => mapping(address => mapping(uint256 => MinSessionRecord))) internal minSessionRecords_;
+
 
     uint64 public s_ = 65;
 
@@ -150,12 +168,86 @@ contract PODEX is PublicVar {
     // plain range
     // function submitProof1() public;
 
+    // submit & verify
+    function submitProofBatch3
+    (
+        uint256 _s_d, uint256 _s_x0_lgs,
+        uint256 _sessionId,
+        address _b,
+        // uint256 _r_u0_x0_lgs_x,
+        // uint256 _r_u0_x0_lgs_y,
+        uint256[2] memory _r_u0_x0_lgs,
+        // uint256 _r_u0d_x,
+        // uint256 _r_u0d_y,
+        uint256[2] memory _r_u0d,
+        uint256 _price,
+        uint256 _expireAt,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    )
+        public
+    {
+        PlainBatch3ReceiptForClaim memory _receipt = PlainBatch3ReceiptForClaim({
+            sessionId: _sessionId,
+            from: _b,
+            u0_x0_lgs: G1Point(_r_u0_x0_lgs[0], _r_u0_x0_lgs[1]),
+            u0d: G1Point(_r_u0d[0], _r_u0d[1]),
+            price: _price,
+            expireAt: _expireAt
+        });
+
+        Signature memory _sig = Signature({
+            v: _v,
+            r: _r,
+            s: _s 
+        });
+
+        // require(checkSig2(_b, _receipt, _sig));
+        // require(now < _expireAt);
+        require(minSessionRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
+        require(verifyProof(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
+        // transfer
+        minSessionRecords_[msg.sender][_b][_sessionId] = MinSessionRecord({
+            d: _s_d,
+            x0_lgs: _s_x0_lgs,
+            submitAt: now
+        });
+    }
+
+    function verifyProof(
+        uint256[2] memory _r_u0d,
+        uint256[2] memory  _r_u0_x0_lgs,
+        uint256 _s_d, uint256 _s_x0_lgs
+    )
+        public
+        view
+        returns (bool)
+    {
+        uint256 _u1_x = ecc_pub_u1_[0].X;
+        uint256 _u1_y = ecc_pub_u1_[0].Y;
+        G1Point memory _check = scalarMul(_u1_x, _u1_y, _s_d);
+        require(_r_u0d[0] == _check.X && _r_u0d[1] == _check.Y, "wrong d");
+        _check = scalarMul(_u1_x, _u1_y, _s_x0_lgs);
+        require(_r_u0_x0_lgs[0] == _check.X && _r_u0_x0_lgs[1] == _check.Y, "wrong x0");
+        return true;
+    }
+
     function checkSig1(address addr, PlainRangeReceipt1ForClaim memory r1, Signature memory sig)
         internal
         pure
         returns (bool)
     {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
+        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+    }
+
+    function checkSig2(address addr, PlainBatch3ReceiptForClaim memory r1, Signature memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.u0_x0_lgs.X, r1.u0_x0_lgs.Y, r1.u0d.X, r1.u0d.Y, r1.price, r1.expireAt));
         return addr == ecrecover(hash, sig.v, sig.r, sig.s);
     }
 
@@ -299,9 +391,9 @@ contract PODEX is PublicVar {
         }
 
         shasum[0] = byte(uint8(shasum[0]) & 63);
-        if(shasum[0] > 0x30) {
-            shasum[0] = byte(uint8(shasum[0]) & 31);
-        }
+        // if(shasum[0] > 0x30) {
+        //     shasum[0] = byte(uint8(shasum[0]) & 31);
+        // }
         
         bytes32 revhash;
         assembly {
@@ -355,7 +447,7 @@ contract PODEX is PublicVar {
     }
 
     function scalarMul(uint256 _x, uint256 _y, uint256 _s)
-        internal
+        public
         view
         returns (G1Point memory r)
     {
