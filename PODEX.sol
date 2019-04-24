@@ -168,6 +168,7 @@ contract PODEX is PublicVar {
     // plain range
     // function submitProof1() public;
 
+    // plain batch3_pod
     // submit & verify
     function submitProofBatch3
     (
@@ -262,6 +263,8 @@ contract PODEX is PublicVar {
     // uint8 v,
     // bytes32 r,
     // bytes32 s,
+    
+    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod)
     function submitProof1WaitClaim
     (
         bytes32 _seed0, 
@@ -319,7 +322,8 @@ contract PODEX is PublicVar {
     //     });
     // }
 
-    function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path)
+    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod)
+    function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _s)
         public
     {
         // loadReceipt
@@ -328,10 +332,10 @@ contract PODEX is PublicVar {
 
         // verify mkl path
         // TODO: think about overflow here
-        uint64 _index = _i*s_+_j;
+        uint64 _index = _i*_s+_j;
         bytes32 _x = convertToBE(bytes32(_tx));
         bytes32 _y = convertToBE(bytes32(_ty));
-        require(verifyPath(_x, _y, _index, _sessionRecord.receipt.count*s_, _sessionRecord.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
+        require(verifyPath(_x, _y, _index, _sessionRecord.receipt.count*_s, _sessionRecord.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
         // derive k
         uint256 _v = chain(_sessionRecord.seed0, _index);
         // calc u^v
