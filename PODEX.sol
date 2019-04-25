@@ -51,7 +51,7 @@ contract PODEX is PublicVar {
         uint256 expireAt;
     }
 
-    struct PlainBatch3ReceiptForClaim {
+    struct PlainBatch3Receipt {
         uint256 sessionId;
         address from;
         G1Point u0_x0_lgs;
@@ -60,9 +60,24 @@ contract PODEX is PublicVar {
         uint256 expireAt;
     }
 
-    struct MinSessionRecord {
+    struct TableBatch2Receipt {
+        uint256 sessionId;
+        address from;
+        bytes32 seed2;
+        uint256 sigma_vw;
+        uint256 count;
+        uint256 price;
+        uint256 expireAt;
+    }
+
+    struct Batch3SessionRecord {
         uint256 d;
         uint256 x0_lgs;
+        uint256 submitAt;
+    }
+
+    struct Batch2SessionRecord {
+        bytes32 seed0;
         uint256 submitAt;
     }
 
@@ -85,7 +100,9 @@ contract PODEX is PublicVar {
     // A => B => SessionId => Receipt
     mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
 
-    mapping (address => mapping(address => mapping(uint256 => MinSessionRecord))) internal minSessionRecords_;
+    mapping (address => mapping(address => mapping(uint256 => Batch3SessionRecord))) internal batch3SessionRecords_;
+
+    mapping (address => mapping(address => mapping(uint256 => Batch2SessionRecord))) internal batch2SessionRecords_;
 
 
     uint64 public s_ = 65;
@@ -165,21 +182,14 @@ contract PODEX is PublicVar {
         // transfer
     }
 
-    // plain range
-    // function submitProof1() public;
-
-    // plain batch3_pod
+    // mode: plain (batch3_pod), table (batch3_pod)
     // submit & verify
     function submitProofBatch3
     (
         uint256 _s_d, uint256 _s_x0_lgs,
         uint256 _sessionId,
         address _b,
-        // uint256 _r_u0_x0_lgs_x,
-        // uint256 _r_u0_x0_lgs_y,
         uint256[2] memory _r_u0_x0_lgs,
-        // uint256 _r_u0d_x,
-        // uint256 _r_u0d_y,
         uint256[2] memory _r_u0d,
         uint256 _price,
         uint256 _expireAt,
@@ -189,7 +199,7 @@ contract PODEX is PublicVar {
     )
         public
     {
-        PlainBatch3ReceiptForClaim memory _receipt = PlainBatch3ReceiptForClaim({
+        PlainBatch3Receipt memory _receipt = PlainBatch3Receipt({
             sessionId: _sessionId,
             from: _b,
             u0_x0_lgs: G1Point(_r_u0_x0_lgs[0], _r_u0_x0_lgs[1]),
@@ -206,17 +216,18 @@ contract PODEX is PublicVar {
 
         // require(checkSig2(_b, _receipt, _sig));
         // require(now < _expireAt);
-        require(minSessionRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
-        require(verifyProof(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
+        require(batch3SessionRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
+        require(verifyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
         // transfer
-        minSessionRecords_[msg.sender][_b][_sessionId] = MinSessionRecord({
+        batch3SessionRecords_[msg.sender][_b][_sessionId] = Batch3SessionRecord({
             d: _s_d,
             x0_lgs: _s_x0_lgs,
             submitAt: now
         });
     }
 
-    function verifyProof(
+    // helper: batch3
+    function verifyProofBatch3(
         uint256[2] memory _r_u0d,
         uint256[2] memory  _r_u0_x0_lgs,
         uint256 _s_d, uint256 _s_x0_lgs
@@ -234,6 +245,89 @@ contract PODEX is PublicVar {
         return true;
     }
 
+    // mode: plain (TODO), table (batch2_pod)
+    // submit & verify
+    function submitProofBatch2
+    (
+        bytes32 _seed0,
+        uint64 _sCnt,
+        // receipt
+        uint256 _sessionId,
+        address _b,
+        bytes32 _seed2,
+        uint256 _sigma_vw,
+        uint64 _count,
+        uint256 _price,
+        uint256 _expireAt,
+        // sig
+        uint8 _v,
+        // bytes32 _r,
+        // bytes32 _s
+        bytes32[2] memory _rs
+    )
+        public
+    {
+        TableBatch2Receipt memory _receipt = TableBatch2Receipt({
+            sessionId: _sessionId,
+            from: _b,
+            seed2: _seed2,
+            sigma_vw: _sigma_vw,
+            count: _count,
+            price: _price,
+            expireAt: _expireAt
+        });
+
+        Signature memory _sig = Signature({
+            v: _v,
+            r: _rs[0],
+            s: _rs[1]
+        });
+
+        // require(checkSig3(_b, _receipt, _sig));
+        // require(now < _expireAt);
+        require(batch2SessionRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
+        require(verifyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
+        // transfer
+        batch2SessionRecords_[msg.sender][_b][_sessionId] = Batch2SessionRecord({
+            seed0: _seed0,
+            submitAt: now
+        });
+    }
+
+    // batch2
+    function verifyProofBatch2(
+        uint64 count, uint64 s,
+        bytes32 seed0, bytes32 seed2,
+        uint sigma_vw
+    )
+        public
+        pure
+        returns(bool)
+    {
+        uint256 v;
+        uint256 w;
+        uint256 check_sigma_vw;
+        uint256 sigma_v;
+        uint64 offset = count * s;
+
+        for (uint64 j = 0; j < s; j++) {
+            v = chain(seed0, offset + j);
+            check_sigma_vw = addmod(check_sigma_vw, v, GEN_ORDER);
+        }
+
+        for(uint64 i=0; i<count; i++){
+            sigma_v = 0;
+            w = chain(seed2, i);
+            for(uint64 j=0; j<s; j++){
+                v = chain(seed0, i*s+j);
+                sigma_v = addmod(sigma_v, v, GEN_ORDER);
+            }
+            check_sigma_vw = addmod(check_sigma_vw, mulmod(sigma_v, w, GEN_ORDER), GEN_ORDER);
+        }
+
+        return check_sigma_vw == sigma_vw;
+    }
+
     function checkSig1(address addr, PlainRangeReceipt1ForClaim memory r1, Signature memory sig)
         internal
         pure
@@ -243,7 +337,7 @@ contract PODEX is PublicVar {
         return addr == ecrecover(hash, sig.v, sig.r, sig.s);
     }
 
-    function checkSig2(address addr, PlainBatch3ReceiptForClaim memory r1, Signature memory sig)
+    function checkSig2(address addr, PlainBatch3Receipt memory r1, Signature memory sig)
         internal
         pure
         returns (bool)
@@ -252,22 +346,20 @@ contract PODEX is PublicVar {
         return addr == ecrecover(hash, sig.v, sig.r, sig.s);
     }
 
-    // uint256 seed0, 
-    // uint256 sessionId,
-    // address from,
-    // bytes32 seed2,
-    // bytes32 k_mkl_root,
-    // uint64 count,
-    // uint256 price,
-    // uint256 expireAt,
-    // uint8 v,
-    // bytes32 r,
-    // bytes32 s,
+    function checkSig3(address addr, TableBatch2Receipt memory r1, Signature memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
+        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+    }
     
-    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod)
+    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
     function submitProof1WaitClaim
     (
-        bytes32 _seed0, 
+        bytes32 _seed0,
+        // receipt
         uint256 _sessionId,
         address _b,
         bytes32 _seed2,
@@ -275,6 +367,7 @@ contract PODEX is PublicVar {
         uint64 _count,
         uint256 _price,
         uint256 _expireAt,
+        // sig
         uint8 _v,
         bytes32 _r,
         bytes32 _s
@@ -307,23 +400,8 @@ contract PODEX is PublicVar {
         });
     }
 
-    // function submitProof1WaitClaim(PlainRangeProof1ForClaim memory proof1)
-    //     public
-    // {
-    //     address _from = proof1.receipt.from;
-    //     uint256 _sessionId = proof1.receipt.sessionId;
-    //     require(checkSig1(_from, proof1.receipt, proof1.receiptSig));
-    //     require(now < proof1.receipt.expireAt);
-    //     require(sessionRecords_[msg.sender][proof1.receipt.from][_sessionId].receipt.from == address(0));
-    //     sessionRecords_[msg.sender][_from][_sessionId] = SessionRecord({
-    //         seed0: proof1.seed0,
-    //         receipt: proof1.receipt,
-    //         submitAt: now
-    //     });
-    // }
-
     // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod)
-    function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _s)
+    function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
         public
     {
         // loadReceipt
@@ -332,10 +410,10 @@ contract PODEX is PublicVar {
 
         // verify mkl path
         // TODO: think about overflow here
-        uint64 _index = _i*_s+_j;
+        uint64 _index = _i*_sCnt + _j;
         bytes32 _x = convertToBE(bytes32(_tx));
         bytes32 _y = convertToBE(bytes32(_ty));
-        require(verifyPath(_x, _y, _index, _sessionRecord.receipt.count*_s, _sessionRecord.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
+        require(verifyPath(_x, _y, _index, _sessionRecord.receipt.count*_sCnt, _sessionRecord.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
         // derive k
         uint256 _v = chain(_sessionRecord.seed0, _index);
         // calc u^v
@@ -395,10 +473,7 @@ contract PODEX is PublicVar {
         }
 
         shasum[0] = byte(uint8(shasum[0]) & 63);
-        // if(shasum[0] > 0x30) {
-        //     shasum[0] = byte(uint8(shasum[0]) & 31);
-        // }
-        
+
         bytes32 revhash;
         assembly {
             revhash := mload(add(shasum, 32))
@@ -451,7 +526,7 @@ contract PODEX is PublicVar {
     }
 
     function scalarMul(uint256 _x, uint256 _y, uint256 _s)
-        public
+        internal
         view
         returns (G1Point memory r)
     {
@@ -494,5 +569,34 @@ contract PODEX is PublicVar {
         expireAt = _sessionRecord.receipt.expireAt;
         submitAt = _sessionRecord.submitAt;
     }
+
+    function getBatch2SessionRecord(address _a, address _b, uint256 _sessionId)
+        public
+        view
+        returns (
+            bytes32 seed0,
+            uint256 submitAt
+        )
+    {
+        Batch2SessionRecord memory _sessionRecord = batch2SessionRecords_[_a][_b][_sessionId];
+        seed0 = _sessionRecord.seed0;
+        submitAt = _sessionRecord.submitAt;
+    }
+
+    function getBatch3SessionRecord(address _a, address _b, uint256 _sessionId)
+        public
+        view
+        returns (
+            uint256 d,
+            uint256 x0_lgs,
+            uint256 submitAt
+        )
+    {
+        Batch3SessionRecord memory _sr = batch3SessionRecords_[_a][_b][_sessionId];
+        d = _sr.d;
+        x0_lgs = _sr.x0_lgs;
+        submitAt = _sr.submitAt;
+    }
+
 
 }

@@ -28,7 +28,7 @@ var (
 )
 
 // PODEXABI is the input ABI used to generate the binding from.
-const PODEXABI = "[{\"constant\":false,\"inputs\":[],\"name\":\"submitProof2\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_i\",\"type\":\"uint64\"},{\"name\":\"_j\",\"type\":\"uint64\"},{\"name\":\"_tx\",\"type\":\"uint256\"},{\"name\":\"_ty\",\"type\":\"uint256\"},{\"name\":\"_mkl_path\",\"type\":\"bytes32[]\"}],\"name\":\"claim\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"bytes32\"},{\"name\":\"_ij\",\"type\":\"uint64\"},{\"name\":\"_ns\",\"type\":\"uint64\"},{\"name\":\"_root\",\"type\":\"bytes32\"},{\"name\":\"_mkl_path\",\"type\":\"bytes32[]\"}],\"name\":\"verifyPath\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_seed0\",\"type\":\"bytes32\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_seed2\",\"type\":\"bytes32\"},{\"name\":\"_k_mkl_root\",\"type\":\"bytes32\"},{\"name\":\"_count\",\"type\":\"uint64\"},{\"name\":\"_price\",\"type\":\"uint256\"},{\"name\":\"_expireAt\",\"type\":\"uint256\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_r\",\"type\":\"bytes32\"},{\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"submitProof1WaitClaim\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_n\",\"type\":\"uint256\"}],\"name\":\"log2ub\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_in\",\"type\":\"bytes32\"}],\"name\":\"convertToBE\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_bltKey\",\"type\":\"bytes32\"}],\"name\":\"unPublish\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ecc_pub_u1_\",\"outputs\":[{\"name\":\"X\",\"type\":\"uint256\"},{\"name\":\"Y\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_size\",\"type\":\"uint64\"},{\"name\":\"_s\",\"type\":\"uint64\"},{\"name\":\"_n\",\"type\":\"uint64\"},{\"name\":\"_sigma_mkl_root\",\"type\":\"uint256\"},{\"name\":\"_vrf_meta_digest\",\"type\":\"uint256\"},{\"name\":\"_blt_type\",\"type\":\"uint256\"}],\"name\":\"publish\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"bytes32\"}],\"name\":\"hashOfTwoSha3\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"seed\",\"type\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint64\"}],\"name\":\"chain\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"buyerDeposit\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"buyerUnDeposit\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"address\"}],\"name\":\"buyerDeposits_\",\"outputs\":[{\"name\":\"value\",\"type\":\"uint256\"},{\"name\":\"unDepositAt\",\"type\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_bltKey\",\"type\":\"bytes32\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"}],\"name\":\"getSessionRecord\",\"outputs\":[{\"name\":\"seed0\",\"type\":\"bytes32\"},{\"name\":\"seed2\",\"type\":\"bytes32\"},{\"name\":\"k_mkl_root\",\"type\":\"bytes32\"},{\"name\":\"count\",\"type\":\"uint64\"},{\"name\":\"price\",\"type\":\"uint256\"},{\"name\":\"expireAt\",\"type\":\"uint256\"},{\"name\":\"submitAt\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"s_\",\"outputs\":[{\"name\":\"\",\"type\":\"uint64\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"bytes32\"}],\"name\":\"hashOfTwoSha256\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"bulletins_\",\"outputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"size\",\"type\":\"uint64\"},{\"name\":\"s\",\"type\":\"uint64\"},{\"name\":\"n\",\"type\":\"uint64\"},{\"name\":\"sigma_mkl_root\",\"type\":\"uint256\"},{\"name\":\"vrf_meta_digest\",\"type\":\"uint256\"},{\"name\":\"pledge_value\",\"type\":\"uint256\"},{\"name\":\"unDepositAt\",\"type\":\"uint256\"},{\"name\":\"blt_type\",\"type\":\"uint8\"},{\"name\":\"status\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"uint64\"}],\"name\":\"hashOfTwoSha3\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_b\",\"type\":\"bytes32\"}],\"name\":\"LogBytes32\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_b\",\"type\":\"bytes\"}],\"name\":\"LogBytes\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_i\",\"type\":\"uint256\"}],\"name\":\"LogUint256\",\"type\":\"event\"}]"
+const PODEXABI = "[{\"constant\":false,\"inputs\":[],\"name\":\"submitProof2\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_r_u0d\",\"type\":\"uint256[2]\"},{\"name\":\"_r_u0_x0_lgs\",\"type\":\"uint256[2]\"},{\"name\":\"_s_d\",\"type\":\"uint256\"},{\"name\":\"_s_x0_lgs\",\"type\":\"uint256\"}],\"name\":\"verifyProofBatch3\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"}],\"name\":\"getBatch2SessionRecord\",\"outputs\":[{\"name\":\"seed0\",\"type\":\"bytes32\"},{\"name\":\"submitAt\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_i\",\"type\":\"uint64\"},{\"name\":\"_j\",\"type\":\"uint64\"},{\"name\":\"_tx\",\"type\":\"uint256\"},{\"name\":\"_ty\",\"type\":\"uint256\"},{\"name\":\"_mkl_path\",\"type\":\"bytes32[]\"},{\"name\":\"_sCnt\",\"type\":\"uint64\"}],\"name\":\"claim\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"bytes32\"},{\"name\":\"_ij\",\"type\":\"uint64\"},{\"name\":\"_ns\",\"type\":\"uint64\"},{\"name\":\"_root\",\"type\":\"bytes32\"},{\"name\":\"_mkl_path\",\"type\":\"bytes32[]\"}],\"name\":\"verifyPath\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_seed0\",\"type\":\"bytes32\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_seed2\",\"type\":\"bytes32\"},{\"name\":\"_k_mkl_root\",\"type\":\"bytes32\"},{\"name\":\"_count\",\"type\":\"uint64\"},{\"name\":\"_price\",\"type\":\"uint256\"},{\"name\":\"_expireAt\",\"type\":\"uint256\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_r\",\"type\":\"bytes32\"},{\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"submitProof1WaitClaim\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_n\",\"type\":\"uint256\"}],\"name\":\"log2ub\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_in\",\"type\":\"bytes32\"}],\"name\":\"convertToBE\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_bltKey\",\"type\":\"bytes32\"}],\"name\":\"unPublish\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ecc_pub_u1_\",\"outputs\":[{\"name\":\"X\",\"type\":\"uint256\"},{\"name\":\"Y\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_seed0\",\"type\":\"bytes32\"},{\"name\":\"_sCnt\",\"type\":\"uint64\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_seed2\",\"type\":\"bytes32\"},{\"name\":\"_sigma_vw\",\"type\":\"uint256\"},{\"name\":\"_count\",\"type\":\"uint64\"},{\"name\":\"_price\",\"type\":\"uint256\"},{\"name\":\"_expireAt\",\"type\":\"uint256\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_rs\",\"type\":\"bytes32[2]\"}],\"name\":\"submitProofBatch2\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_size\",\"type\":\"uint64\"},{\"name\":\"_s\",\"type\":\"uint64\"},{\"name\":\"_n\",\"type\":\"uint64\"},{\"name\":\"_sigma_mkl_root\",\"type\":\"uint256\"},{\"name\":\"_vrf_meta_digest\",\"type\":\"uint256\"},{\"name\":\"_blt_type\",\"type\":\"uint256\"}],\"name\":\"publish\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"bytes32\"}],\"name\":\"hashOfTwoSha3\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"seed\",\"type\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint64\"}],\"name\":\"chain\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"buyerDeposit\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"buyerUnDeposit\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"address\"}],\"name\":\"buyerDeposits_\",\"outputs\":[{\"name\":\"value\",\"type\":\"uint256\"},{\"name\":\"unDepositAt\",\"type\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_bltKey\",\"type\":\"bytes32\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"}],\"name\":\"getSessionRecord\",\"outputs\":[{\"name\":\"seed0\",\"type\":\"bytes32\"},{\"name\":\"seed2\",\"type\":\"bytes32\"},{\"name\":\"k_mkl_root\",\"type\":\"bytes32\"},{\"name\":\"count\",\"type\":\"uint64\"},{\"name\":\"price\",\"type\":\"uint256\"},{\"name\":\"expireAt\",\"type\":\"uint256\"},{\"name\":\"submitAt\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_s_d\",\"type\":\"uint256\"},{\"name\":\"_s_x0_lgs\",\"type\":\"uint256\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_r_u0_x0_lgs\",\"type\":\"uint256[2]\"},{\"name\":\"_r_u0d\",\"type\":\"uint256[2]\"},{\"name\":\"_price\",\"type\":\"uint256\"},{\"name\":\"_expireAt\",\"type\":\"uint256\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_r\",\"type\":\"bytes32\"},{\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"submitProofBatch3\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"s_\",\"outputs\":[{\"name\":\"\",\"type\":\"uint64\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_a\",\"type\":\"address\"},{\"name\":\"_b\",\"type\":\"address\"},{\"name\":\"_sessionId\",\"type\":\"uint256\"}],\"name\":\"getBatch3SessionRecord\",\"outputs\":[{\"name\":\"d\",\"type\":\"uint256\"},{\"name\":\"x0_lgs\",\"type\":\"uint256\"},{\"name\":\"submitAt\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"bulletins_\",\"outputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"size\",\"type\":\"uint64\"},{\"name\":\"s\",\"type\":\"uint64\"},{\"name\":\"n\",\"type\":\"uint64\"},{\"name\":\"sigma_mkl_root\",\"type\":\"uint256\"},{\"name\":\"vrf_meta_digest\",\"type\":\"uint256\"},{\"name\":\"pledge_value\",\"type\":\"uint256\"},{\"name\":\"unDepositAt\",\"type\":\"uint256\"},{\"name\":\"blt_type\",\"type\":\"uint8\"},{\"name\":\"status\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"count\",\"type\":\"uint64\"},{\"name\":\"s\",\"type\":\"uint64\"},{\"name\":\"seed0\",\"type\":\"bytes32\"},{\"name\":\"seed2\",\"type\":\"bytes32\"},{\"name\":\"sigma_vw\",\"type\":\"uint256\"}],\"name\":\"verifyProofBatch2\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_x\",\"type\":\"bytes32\"},{\"name\":\"_y\",\"type\":\"uint64\"}],\"name\":\"hashOfTwoSha3\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_b\",\"type\":\"bytes32\"}],\"name\":\"LogBytes32\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_b\",\"type\":\"bytes\"}],\"name\":\"LogBytes\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_i\",\"type\":\"uint256\"}],\"name\":\"LogUint256\",\"type\":\"event\"}]"
 
 // PODEX is an auto generated Go binding around an Ethereum contract.
 type PODEX struct {
@@ -368,6 +368,82 @@ func (_PODEX *PODEXCallerSession) EccPubU1(arg0 *big.Int) (struct {
 	return _PODEX.Contract.EccPubU1(&_PODEX.CallOpts, arg0)
 }
 
+// GetBatch2SessionRecord is a free data retrieval call binding the contract method 0x17b17a2b.
+//
+// Solidity: function getBatch2SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(bytes32 seed0, uint256 submitAt)
+func (_PODEX *PODEXCaller) GetBatch2SessionRecord(opts *bind.CallOpts, _a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	Seed0    [32]byte
+	SubmitAt *big.Int
+}, error) {
+	ret := new(struct {
+		Seed0    [32]byte
+		SubmitAt *big.Int
+	})
+	out := ret
+	err := _PODEX.contract.Call(opts, out, "getBatch2SessionRecord", _a, _b, _sessionId)
+	return *ret, err
+}
+
+// GetBatch2SessionRecord is a free data retrieval call binding the contract method 0x17b17a2b.
+//
+// Solidity: function getBatch2SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(bytes32 seed0, uint256 submitAt)
+func (_PODEX *PODEXSession) GetBatch2SessionRecord(_a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	Seed0    [32]byte
+	SubmitAt *big.Int
+}, error) {
+	return _PODEX.Contract.GetBatch2SessionRecord(&_PODEX.CallOpts, _a, _b, _sessionId)
+}
+
+// GetBatch2SessionRecord is a free data retrieval call binding the contract method 0x17b17a2b.
+//
+// Solidity: function getBatch2SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(bytes32 seed0, uint256 submitAt)
+func (_PODEX *PODEXCallerSession) GetBatch2SessionRecord(_a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	Seed0    [32]byte
+	SubmitAt *big.Int
+}, error) {
+	return _PODEX.Contract.GetBatch2SessionRecord(&_PODEX.CallOpts, _a, _b, _sessionId)
+}
+
+// GetBatch3SessionRecord is a free data retrieval call binding the contract method 0xcbbf6bd8.
+//
+// Solidity: function getBatch3SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(uint256 d, uint256 x0_lgs, uint256 submitAt)
+func (_PODEX *PODEXCaller) GetBatch3SessionRecord(opts *bind.CallOpts, _a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	D        *big.Int
+	X0Lgs    *big.Int
+	SubmitAt *big.Int
+}, error) {
+	ret := new(struct {
+		D        *big.Int
+		X0Lgs    *big.Int
+		SubmitAt *big.Int
+	})
+	out := ret
+	err := _PODEX.contract.Call(opts, out, "getBatch3SessionRecord", _a, _b, _sessionId)
+	return *ret, err
+}
+
+// GetBatch3SessionRecord is a free data retrieval call binding the contract method 0xcbbf6bd8.
+//
+// Solidity: function getBatch3SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(uint256 d, uint256 x0_lgs, uint256 submitAt)
+func (_PODEX *PODEXSession) GetBatch3SessionRecord(_a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	D        *big.Int
+	X0Lgs    *big.Int
+	SubmitAt *big.Int
+}, error) {
+	return _PODEX.Contract.GetBatch3SessionRecord(&_PODEX.CallOpts, _a, _b, _sessionId)
+}
+
+// GetBatch3SessionRecord is a free data retrieval call binding the contract method 0xcbbf6bd8.
+//
+// Solidity: function getBatch3SessionRecord(address _a, address _b, uint256 _sessionId) constant returns(uint256 d, uint256 x0_lgs, uint256 submitAt)
+func (_PODEX *PODEXCallerSession) GetBatch3SessionRecord(_a common.Address, _b common.Address, _sessionId *big.Int) (struct {
+	D        *big.Int
+	X0Lgs    *big.Int
+	SubmitAt *big.Int
+}, error) {
+	return _PODEX.Contract.GetBatch3SessionRecord(&_PODEX.CallOpts, _a, _b, _sessionId)
+}
+
 // GetSessionRecord is a free data retrieval call binding the contract method 0xacff2f99.
 //
 // Solidity: function getSessionRecord(address _a, address _b, uint256 _sessionId) constant returns(bytes32 seed0, bytes32 seed2, bytes32 k_mkl_root, uint64 count, uint256 price, uint256 expireAt, uint256 submitAt)
@@ -422,32 +498,6 @@ func (_PODEX *PODEXCallerSession) GetSessionRecord(_a common.Address, _b common.
 	SubmitAt *big.Int
 }, error) {
 	return _PODEX.Contract.GetSessionRecord(&_PODEX.CallOpts, _a, _b, _sessionId)
-}
-
-// HashOfTwoSha256 is a free data retrieval call binding the contract method 0xc7c83890.
-//
-// Solidity: function hashOfTwoSha256(bytes32 _x, bytes32 _y) constant returns(bytes32)
-func (_PODEX *PODEXCaller) HashOfTwoSha256(opts *bind.CallOpts, _x [32]byte, _y [32]byte) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _PODEX.contract.Call(opts, out, "hashOfTwoSha256", _x, _y)
-	return *ret0, err
-}
-
-// HashOfTwoSha256 is a free data retrieval call binding the contract method 0xc7c83890.
-//
-// Solidity: function hashOfTwoSha256(bytes32 _x, bytes32 _y) constant returns(bytes32)
-func (_PODEX *PODEXSession) HashOfTwoSha256(_x [32]byte, _y [32]byte) ([32]byte, error) {
-	return _PODEX.Contract.HashOfTwoSha256(&_PODEX.CallOpts, _x, _y)
-}
-
-// HashOfTwoSha256 is a free data retrieval call binding the contract method 0xc7c83890.
-//
-// Solidity: function hashOfTwoSha256(bytes32 _x, bytes32 _y) constant returns(bytes32)
-func (_PODEX *PODEXCallerSession) HashOfTwoSha256(_x [32]byte, _y [32]byte) ([32]byte, error) {
-	return _PODEX.Contract.HashOfTwoSha256(&_PODEX.CallOpts, _x, _y)
 }
 
 // HashOfTwoSha3 is a free data retrieval call binding the contract method 0xfda8c281.
@@ -554,6 +604,58 @@ func (_PODEX *PODEXCallerSession) VerifyPath(_x [32]byte, _y [32]byte, _ij uint6
 	return _PODEX.Contract.VerifyPath(&_PODEX.CallOpts, _x, _y, _ij, _ns, _root, _mkl_path)
 }
 
+// VerifyProofBatch2 is a free data retrieval call binding the contract method 0xdd3e54cb.
+//
+// Solidity: function verifyProofBatch2(uint64 count, uint64 s, bytes32 seed0, bytes32 seed2, uint256 sigma_vw) constant returns(bool)
+func (_PODEX *PODEXCaller) VerifyProofBatch2(opts *bind.CallOpts, count uint64, s uint64, seed0 [32]byte, seed2 [32]byte, sigma_vw *big.Int) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _PODEX.contract.Call(opts, out, "verifyProofBatch2", count, s, seed0, seed2, sigma_vw)
+	return *ret0, err
+}
+
+// VerifyProofBatch2 is a free data retrieval call binding the contract method 0xdd3e54cb.
+//
+// Solidity: function verifyProofBatch2(uint64 count, uint64 s, bytes32 seed0, bytes32 seed2, uint256 sigma_vw) constant returns(bool)
+func (_PODEX *PODEXSession) VerifyProofBatch2(count uint64, s uint64, seed0 [32]byte, seed2 [32]byte, sigma_vw *big.Int) (bool, error) {
+	return _PODEX.Contract.VerifyProofBatch2(&_PODEX.CallOpts, count, s, seed0, seed2, sigma_vw)
+}
+
+// VerifyProofBatch2 is a free data retrieval call binding the contract method 0xdd3e54cb.
+//
+// Solidity: function verifyProofBatch2(uint64 count, uint64 s, bytes32 seed0, bytes32 seed2, uint256 sigma_vw) constant returns(bool)
+func (_PODEX *PODEXCallerSession) VerifyProofBatch2(count uint64, s uint64, seed0 [32]byte, seed2 [32]byte, sigma_vw *big.Int) (bool, error) {
+	return _PODEX.Contract.VerifyProofBatch2(&_PODEX.CallOpts, count, s, seed0, seed2, sigma_vw)
+}
+
+// VerifyProofBatch3 is a free data retrieval call binding the contract method 0x1778d3c6.
+//
+// Solidity: function verifyProofBatch3(uint256[2] _r_u0d, uint256[2] _r_u0_x0_lgs, uint256 _s_d, uint256 _s_x0_lgs) constant returns(bool)
+func (_PODEX *PODEXCaller) VerifyProofBatch3(opts *bind.CallOpts, _r_u0d [2]*big.Int, _r_u0_x0_lgs [2]*big.Int, _s_d *big.Int, _s_x0_lgs *big.Int) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _PODEX.contract.Call(opts, out, "verifyProofBatch3", _r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs)
+	return *ret0, err
+}
+
+// VerifyProofBatch3 is a free data retrieval call binding the contract method 0x1778d3c6.
+//
+// Solidity: function verifyProofBatch3(uint256[2] _r_u0d, uint256[2] _r_u0_x0_lgs, uint256 _s_d, uint256 _s_x0_lgs) constant returns(bool)
+func (_PODEX *PODEXSession) VerifyProofBatch3(_r_u0d [2]*big.Int, _r_u0_x0_lgs [2]*big.Int, _s_d *big.Int, _s_x0_lgs *big.Int) (bool, error) {
+	return _PODEX.Contract.VerifyProofBatch3(&_PODEX.CallOpts, _r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs)
+}
+
+// VerifyProofBatch3 is a free data retrieval call binding the contract method 0x1778d3c6.
+//
+// Solidity: function verifyProofBatch3(uint256[2] _r_u0d, uint256[2] _r_u0_x0_lgs, uint256 _s_d, uint256 _s_x0_lgs) constant returns(bool)
+func (_PODEX *PODEXCallerSession) VerifyProofBatch3(_r_u0d [2]*big.Int, _r_u0_x0_lgs [2]*big.Int, _s_d *big.Int, _s_x0_lgs *big.Int) (bool, error) {
+	return _PODEX.Contract.VerifyProofBatch3(&_PODEX.CallOpts, _r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs)
+}
+
 // BuyerDeposit is a paid mutator transaction binding the contract method 0x7ffdf46b.
 //
 // Solidity: function buyerDeposit(address _to) returns()
@@ -596,25 +698,25 @@ func (_PODEX *PODEXTransactorSession) BuyerUnDeposit(_to common.Address) (*types
 	return _PODEX.Contract.BuyerUnDeposit(&_PODEX.TransactOpts, _to)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x1c35488b.
+// Claim is a paid mutator transaction binding the contract method 0x28d0ff25.
 //
-// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path) returns()
-func (_PODEX *PODEXTransactor) Claim(opts *bind.TransactOpts, _a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte) (*types.Transaction, error) {
-	return _PODEX.contract.Transact(opts, "claim", _a, _sessionId, _i, _j, _tx, _ty, _mkl_path)
+// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path, uint64 _sCnt) returns()
+func (_PODEX *PODEXTransactor) Claim(opts *bind.TransactOpts, _a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte, _sCnt uint64) (*types.Transaction, error) {
+	return _PODEX.contract.Transact(opts, "claim", _a, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x1c35488b.
+// Claim is a paid mutator transaction binding the contract method 0x28d0ff25.
 //
-// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path) returns()
-func (_PODEX *PODEXSession) Claim(_a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte) (*types.Transaction, error) {
-	return _PODEX.Contract.Claim(&_PODEX.TransactOpts, _a, _sessionId, _i, _j, _tx, _ty, _mkl_path)
+// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path, uint64 _sCnt) returns()
+func (_PODEX *PODEXSession) Claim(_a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte, _sCnt uint64) (*types.Transaction, error) {
+	return _PODEX.Contract.Claim(&_PODEX.TransactOpts, _a, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x1c35488b.
+// Claim is a paid mutator transaction binding the contract method 0x28d0ff25.
 //
-// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path) returns()
-func (_PODEX *PODEXTransactorSession) Claim(_a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte) (*types.Transaction, error) {
-	return _PODEX.Contract.Claim(&_PODEX.TransactOpts, _a, _sessionId, _i, _j, _tx, _ty, _mkl_path)
+// Solidity: function claim(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] _mkl_path, uint64 _sCnt) returns()
+func (_PODEX *PODEXTransactorSession) Claim(_a common.Address, _sessionId *big.Int, _i uint64, _j uint64, _tx *big.Int, _ty *big.Int, _mkl_path [][32]byte, _sCnt uint64) (*types.Transaction, error) {
+	return _PODEX.Contract.Claim(&_PODEX.TransactOpts, _a, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt)
 }
 
 // Publish is a paid mutator transaction binding the contract method 0x56e25912.
@@ -678,6 +780,48 @@ func (_PODEX *PODEXSession) SubmitProof2() (*types.Transaction, error) {
 // Solidity: function submitProof2() returns()
 func (_PODEX *PODEXTransactorSession) SubmitProof2() (*types.Transaction, error) {
 	return _PODEX.Contract.SubmitProof2(&_PODEX.TransactOpts)
+}
+
+// SubmitProofBatch2 is a paid mutator transaction binding the contract method 0x56182831.
+//
+// Solidity: function submitProofBatch2(bytes32 _seed0, uint64 _sCnt, uint256 _sessionId, address _b, bytes32 _seed2, uint256 _sigma_vw, uint64 _count, uint256 _price, uint256 _expireAt, uint8 _v, bytes32[2] _rs) returns()
+func (_PODEX *PODEXTransactor) SubmitProofBatch2(opts *bind.TransactOpts, _seed0 [32]byte, _sCnt uint64, _sessionId *big.Int, _b common.Address, _seed2 [32]byte, _sigma_vw *big.Int, _count uint64, _price *big.Int, _expireAt *big.Int, _v uint8, _rs [2][32]byte) (*types.Transaction, error) {
+	return _PODEX.contract.Transact(opts, "submitProofBatch2", _seed0, _sCnt, _sessionId, _b, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs)
+}
+
+// SubmitProofBatch2 is a paid mutator transaction binding the contract method 0x56182831.
+//
+// Solidity: function submitProofBatch2(bytes32 _seed0, uint64 _sCnt, uint256 _sessionId, address _b, bytes32 _seed2, uint256 _sigma_vw, uint64 _count, uint256 _price, uint256 _expireAt, uint8 _v, bytes32[2] _rs) returns()
+func (_PODEX *PODEXSession) SubmitProofBatch2(_seed0 [32]byte, _sCnt uint64, _sessionId *big.Int, _b common.Address, _seed2 [32]byte, _sigma_vw *big.Int, _count uint64, _price *big.Int, _expireAt *big.Int, _v uint8, _rs [2][32]byte) (*types.Transaction, error) {
+	return _PODEX.Contract.SubmitProofBatch2(&_PODEX.TransactOpts, _seed0, _sCnt, _sessionId, _b, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs)
+}
+
+// SubmitProofBatch2 is a paid mutator transaction binding the contract method 0x56182831.
+//
+// Solidity: function submitProofBatch2(bytes32 _seed0, uint64 _sCnt, uint256 _sessionId, address _b, bytes32 _seed2, uint256 _sigma_vw, uint64 _count, uint256 _price, uint256 _expireAt, uint8 _v, bytes32[2] _rs) returns()
+func (_PODEX *PODEXTransactorSession) SubmitProofBatch2(_seed0 [32]byte, _sCnt uint64, _sessionId *big.Int, _b common.Address, _seed2 [32]byte, _sigma_vw *big.Int, _count uint64, _price *big.Int, _expireAt *big.Int, _v uint8, _rs [2][32]byte) (*types.Transaction, error) {
+	return _PODEX.Contract.SubmitProofBatch2(&_PODEX.TransactOpts, _seed0, _sCnt, _sessionId, _b, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs)
+}
+
+// SubmitProofBatch3 is a paid mutator transaction binding the contract method 0xbf8c5d28.
+//
+// Solidity: function submitProofBatch3(uint256 _s_d, uint256 _s_x0_lgs, uint256 _sessionId, address _b, uint256[2] _r_u0_x0_lgs, uint256[2] _r_u0d, uint256 _price, uint256 _expireAt, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_PODEX *PODEXTransactor) SubmitProofBatch3(opts *bind.TransactOpts, _s_d *big.Int, _s_x0_lgs *big.Int, _sessionId *big.Int, _b common.Address, _r_u0_x0_lgs [2]*big.Int, _r_u0d [2]*big.Int, _price *big.Int, _expireAt *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _PODEX.contract.Transact(opts, "submitProofBatch3", _s_d, _s_x0_lgs, _sessionId, _b, _r_u0_x0_lgs, _r_u0d, _price, _expireAt, _v, _r, _s)
+}
+
+// SubmitProofBatch3 is a paid mutator transaction binding the contract method 0xbf8c5d28.
+//
+// Solidity: function submitProofBatch3(uint256 _s_d, uint256 _s_x0_lgs, uint256 _sessionId, address _b, uint256[2] _r_u0_x0_lgs, uint256[2] _r_u0d, uint256 _price, uint256 _expireAt, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_PODEX *PODEXSession) SubmitProofBatch3(_s_d *big.Int, _s_x0_lgs *big.Int, _sessionId *big.Int, _b common.Address, _r_u0_x0_lgs [2]*big.Int, _r_u0d [2]*big.Int, _price *big.Int, _expireAt *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _PODEX.Contract.SubmitProofBatch3(&_PODEX.TransactOpts, _s_d, _s_x0_lgs, _sessionId, _b, _r_u0_x0_lgs, _r_u0d, _price, _expireAt, _v, _r, _s)
+}
+
+// SubmitProofBatch3 is a paid mutator transaction binding the contract method 0xbf8c5d28.
+//
+// Solidity: function submitProofBatch3(uint256 _s_d, uint256 _s_x0_lgs, uint256 _sessionId, address _b, uint256[2] _r_u0_x0_lgs, uint256[2] _r_u0d, uint256 _price, uint256 _expireAt, uint8 _v, bytes32 _r, bytes32 _s) returns()
+func (_PODEX *PODEXTransactorSession) SubmitProofBatch3(_s_d *big.Int, _s_x0_lgs *big.Int, _sessionId *big.Int, _b common.Address, _r_u0_x0_lgs [2]*big.Int, _r_u0d [2]*big.Int, _price *big.Int, _expireAt *big.Int, _v uint8, _r [32]byte, _s [32]byte) (*types.Transaction, error) {
+	return _PODEX.Contract.SubmitProofBatch3(&_PODEX.TransactOpts, _s_d, _s_x0_lgs, _sessionId, _b, _r_u0_x0_lgs, _r_u0d, _price, _expireAt, _v, _r, _s)
 }
 
 // UnPublish is a paid mutator transaction binding the contract method 0x52bb0780.

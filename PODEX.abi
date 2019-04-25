@@ -9,6 +9,68 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_r_u0d",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_r_u0_x0_lgs",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_s_d",
+				"type": "uint256"
+			},
+			{
+				"name": "_s_x0_lgs",
+				"type": "uint256"
+			}
+		],
+		"name": "verifyProofBatch3",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sessionId",
+				"type": "uint256"
+			}
+		],
+		"name": "getBatch2SessionRecord",
+		"outputs": [
+			{
+				"name": "seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"constant": false,
 		"inputs": [
 			{
@@ -38,6 +100,10 @@
 			{
 				"name": "_mkl_path",
 				"type": "bytes32[]"
+			},
+			{
+				"name": "_sCnt",
+				"type": "uint64"
 			}
 		],
 		"name": "claim",
@@ -226,6 +292,60 @@
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "_sCnt",
+				"type": "uint64"
+			},
+			{
+				"name": "_sessionId",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "_sigma_vw",
+				"type": "uint256"
+			},
+			{
+				"name": "_count",
+				"type": "uint64"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_v",
+				"type": "uint8"
+			},
+			{
+				"name": "_rs",
+				"type": "bytes32[2]"
+			}
+		],
+		"name": "submitProofBatch2",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -433,6 +553,60 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_s_d",
+				"type": "uint256"
+			},
+			{
+				"name": "_s_x0_lgs",
+				"type": "uint256"
+			},
+			{
+				"name": "_sessionId",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_r_u0_x0_lgs",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_r_u0d",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_v",
+				"type": "uint8"
+			},
+			{
+				"name": "_r",
+				"type": "bytes32"
+			},
+			{
+				"name": "_s",
+				"type": "bytes32"
+			}
+		],
+		"name": "submitProofBatch3",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "s_",
@@ -450,23 +624,35 @@
 		"constant": true,
 		"inputs": [
 			{
-				"name": "_x",
-				"type": "bytes32"
+				"name": "_a",
+				"type": "address"
 			},
 			{
-				"name": "_y",
-				"type": "bytes32"
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sessionId",
+				"type": "uint256"
 			}
 		],
-		"name": "hashOfTwoSha256",
+		"name": "getBatch3SessionRecord",
 		"outputs": [
 			{
-				"name": "",
-				"type": "bytes32"
+				"name": "d",
+				"type": "uint256"
+			},
+			{
+				"name": "x0_lgs",
+				"type": "uint256"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
-		"stateMutability": "pure",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -528,6 +714,41 @@
 		"constant": true,
 		"inputs": [
 			{
+				"name": "count",
+				"type": "uint64"
+			},
+			{
+				"name": "s",
+				"type": "uint64"
+			},
+			{
+				"name": "seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "sigma_vw",
+				"type": "uint256"
+			}
+		],
+		"name": "verifyProofBatch2",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
 				"name": "_x",
 				"type": "bytes32"
 			},
@@ -546,12 +767,6 @@
 		"payable": false,
 		"stateMutability": "pure",
 		"type": "function"
-	},
-	{
-		"inputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "constructor"
 	},
 	{
 		"anonymous": false,
