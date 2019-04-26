@@ -70,6 +70,14 @@ contract PODEX is PublicVar {
         uint256 expireAt;
     }
 
+    struct VRFReceipt {
+        uint256 sessionId;
+        address from;
+        G1Point g_exp_r;
+        uint256 price;
+        uint256 expireAt;
+    }
+
     struct Batch3SessionRecord {
         uint256 d;
         uint256 x0_lgs;
@@ -78,6 +86,11 @@ contract PODEX is PublicVar {
 
     struct Batch2SessionRecord {
         bytes32 seed0;
+        uint256 submitAt;
+    }
+
+    struct VRFSessionRecord {
+        uint256 r;
         uint256 submitAt;
     }
 
@@ -104,6 +117,7 @@ contract PODEX is PublicVar {
 
     mapping (address => mapping(address => mapping(uint256 => Batch2SessionRecord))) internal batch2SessionRecords_;
 
+    mapping (address => mapping(address => mapping(uint256 => VRFSessionRecord))) internal vrfSessionRecords_;
 
     uint64 public s_ = 65;
 
@@ -245,6 +259,20 @@ contract PODEX is PublicVar {
         return true;
     }
 
+    function verifyProofVRF(
+        uint256[2] memory _g_exp_r,
+        uint256 _s_r
+    )
+        public
+        view
+        returns (bool)
+    {
+        // g1: 1 1 2
+        G1Point memory _check = scalarMul(1, 2, _s_r);
+        require(_g_exp_r[0] == _check.X && _g_exp_r[1] == _check.Y, "wrong r");
+        return true;
+    }
+
     // mode: plain (TODO), table (batch2_pod)
     // submit & verify
     function submitProofBatch2
@@ -328,6 +356,51 @@ contract PODEX is PublicVar {
         return check_sigma_vw == sigma_vw;
     }
 
+
+    // mode: table (vrf_query/ot_vrf_query)
+    // submit & verify
+    function submitProofVRF
+    (
+        uint256 _s_r, // secret r
+        // receipt
+        uint256 _sessionId,
+        address _b,
+        uint256[2] memory _g_exp_r,
+        uint256 _price,
+        uint256 _expireAt,
+        // sig
+        uint8 _v,
+        // bytes32 _r,
+        // bytes32 _s
+        bytes32[2] memory _rs
+    )
+        public
+    {
+        VRFReceipt memory _receipt = VRFReceipt({
+            sessionId: _sessionId,
+            from: _b,
+            g_exp_r: G1Point(_g_exp_r[0], _g_exp_r[1]),
+            price: _price,
+            expireAt: _expireAt
+        });
+
+        Signature memory _sig = Signature({
+            v: _v,
+            r: _rs[0],
+            s: _rs[1]
+        });
+
+        // require(checkSigVRF(_b, _receipt, _sig));
+        // require(now < _expireAt);
+        require(vrfSessionRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
+        require(verifyProofVRF(_g_exp_r, _s_r), "invalid proof");
+        // transfer
+        vrfSessionRecords_[msg.sender][_b][_sessionId] = VRFSessionRecord({
+            r: _s_r,
+            submitAt: now
+        });
+    }
+
     function checkSig1(address addr, PlainRangeReceipt1ForClaim memory r1, Signature memory sig)
         internal
         pure
@@ -354,7 +427,16 @@ contract PODEX is PublicVar {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
         return addr == ecrecover(hash, sig.v, sig.r, sig.s);
     }
-    
+
+    function checkSigVRF(address addr, VRFReceipt memory r1, Signature memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
+        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+    }
+
     // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
     function submitProof1WaitClaim
     (
@@ -598,5 +680,17 @@ contract PODEX is PublicVar {
         submitAt = _sr.submitAt;
     }
 
+    function getVRFSessionRecord(address _a, address _b, uint256 _sessionId)
+        public
+        view
+        returns (
+            uint256 r,
+            uint256 submitAt
+        )
+    {
+        VRFSessionRecord memory _sr = vrfSessionRecords_[_a][_b][_sessionId];
+        r = _sr.r;
+        submitAt = _sr.submitAt;
+    }
 
 }
