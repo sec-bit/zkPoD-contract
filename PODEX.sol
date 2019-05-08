@@ -46,7 +46,7 @@ contract PODEX is PublicVar {
         address from;
         bytes32 seed2;
         uint256 sigma_vw;
-        uint256 count;
+        uint64 count;
         uint256 price;
         uint256 expireAt;
     }
@@ -563,7 +563,7 @@ contract PODEX is PublicVar {
     function log2ub(uint256 _n)
         public
         pure
-        returns (uint256)   
+        returns (uint256)
     {
         if (_n == 1) return 0;
         if (_n % 2 != 0) _n++;
