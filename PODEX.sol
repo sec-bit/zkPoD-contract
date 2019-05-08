@@ -234,10 +234,10 @@ contract PODEX is PublicVar {
         Signature memory _sig = Signature({
             v: _v,
             r: _r,
-            s: _s 
+            s: _s
         });
 
-        // require(checkSigBatch1(_b, _receipt, _sig));
+        require(checkSigBatch1(_b, _receipt, _sig));
         // require(now < _expireAt);
         require(batch1Records[msg.sender][_b][_sessionId].receipt.from == address(0));
         batch1Records[msg.sender][_b][_sessionId] = Batch1Record({
@@ -294,7 +294,7 @@ contract PODEX is PublicVar {
             s: _rs[1]
         });
 
-        // require(checkSigBatch2(_b, _receipt, _sig));
+        require(checkSigBatch2(_b, _receipt, _sig));
         // require(now < _expireAt);
         require(batch2Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
@@ -333,10 +333,10 @@ contract PODEX is PublicVar {
         Signature memory _sig = Signature({
             v: _v,
             r: _r,
-            s: _s 
+            s: _s
         });
 
-        // require(checkSigBatch3(_b, _receipt, _sig));
+        require(checkSigBatch3(_b, _receipt, _sig));
         // require(now < _expireAt);
         require(batch3Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
@@ -380,7 +380,7 @@ contract PODEX is PublicVar {
             s: _rs[1]
         });
 
-        // require(checkSigVRF(_b, _receipt, _sig));
+        require(checkSigVRF(_b, _receipt, _sig));
         // require(now < _expireAt);
         require(vrfRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofVRF(_g_exp_r, _s_r), "invalid proof");
