@@ -165,7 +165,7 @@ contract PODEX is PublicVar {
     {
         require(bulletins_[_bltKey].status == DepositStatus.OK);
         bulletins_[_bltKey].status = DepositStatus.CANCELING;
-        bulletins_[_bltKey].unDepositAt = now;  
+        bulletins_[_bltKey].unDepositAt = now;
     }
 
     function buyerDeposit(address _to)
@@ -237,7 +237,7 @@ contract PODEX is PublicVar {
             s: _s
         });
 
-        require(checkSigBatch1(_b, _receipt, _sig));
+        require(checkSigBatch1(_b, _receipt, _sig), "wrong sig");
         // require(now < _expireAt);
         require(batch1Records[msg.sender][_b][_sessionId].receipt.from == address(0));
         batch1Records[msg.sender][_b][_sessionId] = Batch1Record({
@@ -294,7 +294,7 @@ contract PODEX is PublicVar {
             s: _rs[1]
         });
 
-        require(checkSigBatch2(_b, _receipt, _sig));
+        require(checkSigBatch2(_b, _receipt, _sig), "wrong sig");
         // require(now < _expireAt);
         require(batch2Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
@@ -336,7 +336,7 @@ contract PODEX is PublicVar {
             s: _s
         });
 
-        require(checkSigBatch3(_b, _receipt, _sig));
+        require(checkSigBatch3(_b, _receipt, _sig), "wrong sig");
         // require(now < _expireAt);
         require(batch3Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
@@ -380,7 +380,7 @@ contract PODEX is PublicVar {
             s: _rs[1]
         });
 
-        require(checkSigVRF(_b, _receipt, _sig));
+        require(checkSigVRF(_b, _receipt, _sig), "wrong sig");
         // require(now < _expireAt);
         require(vrfRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
         require(verifyProofVRF(_g_exp_r, _s_r), "invalid proof");
@@ -408,7 +408,8 @@ contract PODEX is PublicVar {
         // calc u^v
         G1Point memory _check = scalarMul(ecc_pub_u1_[_j].X, ecc_pub_u1_[_j].Y, _v);
         emit LogG1Point(_check.X, _check.Y);
-        require(_check.X != _tx || _check.Y != _ty, "invalid claim");   
+        require(_check.X != _tx || _check.Y != _ty, "invalid claim");
+        return true;
     }
 
     function verifyProofBatch2(
@@ -481,12 +482,11 @@ contract PODEX is PublicVar {
         pure
         returns (bool)
     {
-        bytes32 _value_b = hashInSha3(_x, _y);
+        bytes32 _value = hashInSha3(_x, _y);
         uint256 _depth = log2ub(_ns);
         if (_mkl_path.length != _depth) {
             return false;
         }
-        bytes32 _value = _value_b;
 
         uint64 _pos = _ij;
         for (uint256 _i = 0; _i < _depth; _i++) {
@@ -524,22 +524,7 @@ contract PODEX is PublicVar {
         returns (uint256)
     {
         bytes32 _ret = hashInSha3(seed, index);
-
-        bytes memory shasum = new bytes(32);
-        uint j;
-        for (j=0; j<32; j++) {
-            shasum[j] = _ret[j];
-        }
-
-        shasum[0] = byte(uint8(shasum[0]) & 63);
-
-        bytes32 revhash;
-        assembly {
-            revhash := mload(add(shasum, 32))
-        }
-
-        bytes32 _retMod = bytes32(uint256(revhash) % GEN_ORDER);
-        return uint256(_retMod);
+        return uint256(_ret) % GEN_ORDER;
     }
 
     function scalarMul(uint256 _x, uint256 _y, uint256 _s)
