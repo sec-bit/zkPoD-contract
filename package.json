@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test": "truffle test",
+    "genABI": "truffle compile && node getABI.js",
+    "genWrapper": "npm run genABI && ./gen_wrapper.sh"
+  },
+  "dependencies": {
+    "web3": "^1.0.0-beta.55"
+  },
+  "devDependencies": {}
+}
