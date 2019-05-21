@@ -118,6 +118,10 @@ contract PODEX is PublicVar {
 
     /* Variables */
 
+    uint256 public t1 = 8 hours;
+    uint256 public t2 = 12 hours;
+    uint256 public t3 = 24 hours;
+
     uint64 public s_ = 65;
     uint256 internal constant GEN_ORDER = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
 
