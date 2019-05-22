@@ -3,10 +3,14 @@ const { getWeb3 } = require("./helpers");
 const web3 = getWeb3();
 const fs = require('fs');
 const testdataPath = "test/testdata";
+const truffleAssert = require('truffle-assertions');
 
 contract("PODEX", async (accounts) => {
 
     let podex;
+
+    let seller = accounts[0];
+    let buyer = accounts[1];
 
     before(async () => {
         podex = await PODEX.deployed();
@@ -37,12 +41,18 @@ contract("PODEX", async (accounts) => {
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _size }, { t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root });
         let bulletin = await podex.bulletins_(_bltKey);
 
+        assert.equal(bulletin.owner, seller, "wrong owner");
         assert.equal(bulletin.size, blt.size, "wrong size");
         assert.equal(bulletin.s, blt.s, "wrong s");
         assert.equal(bulletin.n, blt.n, "wrong n");
         assert.equal(bulletin.sigma_mkl_root, web3.utils.toBN(_sigma_mkl_root).toString(), "wrong sigma_mkl_root");
         assert.equal(bulletin.status, 0, "wrong status");
         assert.equal(bulletin.blt_type, _blt_type, "wrong blt_type");
+
+        await truffleAssert.reverts(
+            podex.publish(_size, _s, _n, _sigma_mkl_root, 0, _blt_type),
+            "blt occupied"
+        );
 
     });
 
@@ -61,6 +71,7 @@ contract("PODEX", async (accounts) => {
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root }, { t: 'uint256', v: _vrf_meta_digest });
         let bulletin = await podex.bulletins_(_bltKey);
 
+        assert.equal(bulletin.owner, seller, "wrong owner");
         assert.equal(bulletin.s, blt.s, "wrong s");
         assert.equal(bulletin.n, blt.n, "wrong n");
         assert.equal(bulletin.sigma_mkl_root, web3.utils.toBN(_sigma_mkl_root).toString(), "wrong sigma_mkl_root");
@@ -68,6 +79,173 @@ contract("PODEX", async (accounts) => {
         assert.equal(bulletin.status, 0, "wrong status");
         assert.equal(bulletin.blt_type, _blt_type, "wrong blt_type");
 
+        await truffleAssert.reverts(
+            podex.publish(_size, _s, _n, _sigma_mkl_root, _vrf_meta_digest, _blt_type),
+            "blt occupied"
+        );
+    });
+
+    it("should submitProofBatch1 correctly (for not evil)", async () => {
+        let path = testdataPath + "/batch1/not_evil";
+        let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
+        let secret = JSON.parse(fs.readFileSync(path + "/secret"));
+
+        // let _sessionId = Math.random().toString().slice(2, 17);
+        let _sessionId = 0;
+        let _from = buyer;
+        let _seed0 = "0x" + secret.s;
+        let _seed2 = "0x" + receipt.s;
+        let _k_mkl_root = "0x" + receipt.k;
+        let _count = receipt.c;
+        let _price = 0;
+        let _expireAt = 0;
+
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let signature = await web3.eth.sign(hash, buyer);
+        signature = signature.split('x')[1];
+        let _r = "0x" + signature.substring(0, 64)
+        let _s = "0x" + signature.substring(64, 128)
+        let _v = parseInt(signature.substring(128, 130)) + 27;
+
+        await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, _v, _r, _s, {from: seller});
+
+        await truffleAssert.reverts(
+            podex.submitProofBatch1(_seed0, _sessionId, buyer, _seed2, _k_mkl_root, _count, _price, _expireAt, _v, _r, _s, {from: seller})
+        );
+    });
+
+    it("should submitProofBatch1 correctly (for evil)", async () => {
+        let path = testdataPath + "/batch1/evil";
+        let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
+        let secret = JSON.parse(fs.readFileSync(path + "/secret"));
+        let claim = JSON.parse(fs.readFileSync(path + "/claim"));
+
+        // let _sessionId = Math.random().toString().slice(2, 17);
+        let _sessionId = 1;
+        let _from = buyer;
+        let _seed0 = "0x" + secret.s;
+        let _seed2 = "0x" + receipt.s;
+        let _k_mkl_root = "0x" + receipt.k;
+        let _count = receipt.c;
+        let _price = 0;
+        let _expireAt = 0;
+
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let signature = await web3.eth.sign(hash, buyer);
+        signature = signature.split('x')[1];
+        let _r = "0x" + signature.substring(0, 64)
+        let _s = "0x" + signature.substring(64, 128)
+        let _v = parseInt(signature.substring(128, 130)) + 27;
+
+        await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, _v, _r, _s, { from: seller });
+    });
+
+    it("should claimBatch1 correctly (for evil)", async () => {
+        let path = testdataPath + "/batch1/evil";
+        let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
+        let claim = JSON.parse(fs.readFileSync(path + "/claim"));
+        let _sessionId = 1;
+
+        let _sCnt = bulletin.s;
+
+        let _i = claim.i;
+        let _j = claim.j;
+        let _tk = claim.k.split(" ");
+        let _tx = _tk[1];
+        let _ty = _tk[2];
+        let _mkl_path = claim.m.map(function (i) {
+            return '0x' + i;
+        })
+
+        await podex.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer })
+    });
+
+    it("should claimBatch1 fail (for not evil)", async () => {
+        let path = testdataPath + "/batch1/evil";
+        let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
+        let claim = JSON.parse(fs.readFileSync(path + "/claim"));
+        let _sessionId = 0;
+
+        let _sCnt = bulletin.s;
+
+        let _i = claim.i;
+        let _j = claim.j;
+        let _tk = claim.k.split(" ");
+        let _tx = _tk[1];
+        let _ty = _tk[2];
+        let _mkl_path = claim.m.map(function (i) {
+            return '0x' + i;
+        })
+
+        await truffleAssert.reverts(
+            podex.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer }),
+            "invalid mkl proof"
+        )
+    });
+
+    it("should submitProofBatch2 correctly (not evil)", async () => {
+        let path = testdataPath + "/batch2/not_evil";
+        let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
+        let secret = JSON.parse(fs.readFileSync(path + "/secret"));
+        let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
+        let _sCnt = bulletin.s;
+        let _sessionId = 2;
+
+        let _seed0 = "0x" + secret.s;
+        let _from = buyer;
+        let _seed2 = "0x" + receipt.s;
+        let _sigma_vw = receipt.vw;
+        let _count = receipt.c;
+        let _price = 0;
+        let _expireAt = 0;
+
+        // uint256 _sessionId,
+        // address _b,
+        // bytes32 _seed2,
+        // uint256 _sigma_vw,
+        // uint64 _count,
+        // uint256 _price,
+        // uint256 _expireAt,
+
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let signature = await web3.eth.sign(hash, buyer);
+        signature = signature.split('x')[1];
+        console.log("signature:", signature);
+        let _r = "0x" + signature.substring(0, 64)
+        let _s = "0x" + signature.substring(64, 128)
+        let _v = parseInt(signature.substring(128, 130)) + 27;
+        let _rs = [_r, _s];
+
+        await podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs, { from: seller })
+
+        await truffleAssert.reverts(podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs, { from: seller }), "not new")
+    });
+
+    it("should submitProofBatch2 fail (evil)", async () => {
+        let path = testdataPath + "/batch2/evil";
+        let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
+        let secret = JSON.parse(fs.readFileSync(path + "/secret"));
+        let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
+        let _sCnt = bulletin.s;
+        let _sessionId = 3;
+
+        let _seed0 = "0x" + secret.s;
+        let _from = buyer;
+        let _seed2 = "0x" + receipt.s;
+        let _sigma_vw = receipt.vw;
+        let _count = receipt.c;
+        let _price = 0;
+        let _expireAt = 0;
+
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let signature = await web3.eth.sign(hash, buyer);
+        signature = signature.split('x')[1];
+        let _r = "0x" + signature.substring(0, 64)
+        let _s = "0x" + signature.substring(64, 128)
+        let _v = parseInt(signature.substring(128, 130)) + 27;
+        let _rs = [_r, _s];
+
+        await truffleAssert.reverts(podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, _v, _rs, { from: seller }), "invalid proof")
     });
 
     // it("", async () => {
