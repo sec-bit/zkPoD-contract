@@ -577,13 +577,22 @@ contract PODEX is PublicVar {
 
     /* Helper Functions - Receipt Signature */
 
+    function prefixed(bytes32 hash)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+    }
+
+
     function checkSigBatch1(address addr, Batch1Receipt memory r1, Signature memory sig)
         internal
         pure
         returns (bool)
     {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
-        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
     }
 
     function checkSigBatch2(address addr, Batch2Receipt memory r1, Signature memory sig)
@@ -592,7 +601,7 @@ contract PODEX is PublicVar {
         returns (bool)
     {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
-        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
     }
 
     function checkSigBatch3(address addr, Batch3Receipt memory r1, Signature memory sig)
@@ -601,7 +610,7 @@ contract PODEX is PublicVar {
         returns (bool)
     {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.u0_x0_lgs.X, r1.u0_x0_lgs.Y, r1.u0d.X, r1.u0d.Y, r1.price, r1.expireAt));
-        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
     }
 
     function checkSigVRF(address addr, VRFReceipt memory r1, Signature memory sig)
@@ -610,7 +619,7 @@ contract PODEX is PublicVar {
         returns (bool)
     {
         bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
-        return addr == ecrecover(hash, sig.v, sig.r, sig.s);
+        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
     }
 
     /* Public Getters */
