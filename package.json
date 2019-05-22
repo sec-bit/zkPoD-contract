@@ -5,6 +5,7 @@
     "genWrapper": "npm run genABI && scripts/gen_wrapper.sh"
   },
   "dependencies": {
+    "eth-gas-reporter": "^0.2.0",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3": "^1.0.0-beta.55"
   },
