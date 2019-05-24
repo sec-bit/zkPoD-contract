@@ -1,8 +1,10 @@
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import "./PublicVar.sol";
+import "./interface/PublicVarInterface.sol";
+import "./lib/ECDSA.sol";
 
-contract PODEX is PublicVar {
+contract PODEX {
 
     struct Bulletin {
         address owner;
@@ -14,25 +16,20 @@ contract PODEX is PublicVar {
         uint256 pledge_value;
         uint256 unDepositAt;
         BltType blt_type;
-        DepositStatus status;
+        DepositStat stat;
     }
 
     struct Deposit {
         uint256 value;
         uint256 unDepositAt;
-        DepositStatus status;
-    }
-
-    struct Signature {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        uint256 pendingCnt;
+        DepositStat stat;
     }
 
     /* Receipt Struct */
 
     struct Batch1Receipt {
-        uint256 sessionId;
+        uint256 sid;
         address from;
         bytes32 seed2;
         bytes32 k_mkl_root;
@@ -42,7 +39,7 @@ contract PODEX is PublicVar {
     }
 
     struct Batch2Receipt {
-        uint256 sessionId;
+        uint256 sid;
         address from;
         bytes32 seed2;
         uint256 sigma_vw;
@@ -52,7 +49,7 @@ contract PODEX is PublicVar {
     }
 
     struct Batch3Receipt {
-        uint256 sessionId;
+        uint256 sid;
         address from;
         G1Point u0_x0_lgs;
         G1Point u0d;
@@ -61,7 +58,7 @@ contract PODEX is PublicVar {
     }
 
     struct VRFReceipt {
-        uint256 sessionId;
+        uint256 sid;
         address from;
         G1Point g_exp_r;
         uint256 price;
@@ -69,40 +66,61 @@ contract PODEX is PublicVar {
     }
 
     /* Session Record Struct */
+    struct SessionRecord {
+        uint256 submitAt;
+        TradeMode mode;
+        TradeStat stat;
+    }
 
     struct Batch1Record {
         bytes32 seed0;
         Batch1Receipt receipt;
-        uint256 submitAt;
     }
 
     struct Batch2Record {
         bytes32 seed0;
-        uint256 submitAt;
     }
 
     struct Batch3Record {
         uint256 d;
         uint256 x0_lgs;
-        uint256 submitAt;
     }
 
     struct VRFRecord {
         uint256 r;
-        uint256 submitAt;
+    }
+
+    /* Others */
+
+    struct G1Point {
+        uint256 X;
+        uint256 Y;
     }
 
     /* Enum */
 
-    enum DepositStatus {
+    enum BltType {
+        PLAIN,
+        TABLE
+    }
+
+    enum DepositStat {
         OK,
         CANCELING,
         CANCELED
     }
 
-    enum BltType {
-        PLAIN,
-        TABLE
+    enum TradeStat {
+        DEAL,
+        WAIT,
+        CLAIMED
+    }
+
+    enum TradeMode {
+        BATCH1,
+        BATCH2,
+        BATCH3,
+        VRF
     }
 
     /* Mappings */
@@ -110,29 +128,45 @@ contract PODEX is PublicVar {
     mapping (bytes32 => Bulletin) public bulletins_;
     // B => A => Deposit
     mapping (address => mapping(address => Deposit)) public buyerDeposits_;
-    // A => B => SessionId => Record
-    mapping (address => mapping(address => mapping(uint256 => Batch1Record))) internal batch1Records;
+    // A => B => sid => Record
+    mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
+    mapping (address => mapping(address => mapping(uint256 => Batch1Record))) internal batch1Records_;
     mapping (address => mapping(address => mapping(uint256 => Batch2Record))) internal batch2Records_;
     mapping (address => mapping(address => mapping(uint256 => Batch3Record))) internal batch3Records_;
     mapping (address => mapping(address => mapping(uint256 => VRFRecord))) internal vrfRecords_;
 
     /* Variables */
-
-    uint256 public t1 = 8 hours;
-    uint256 public t2 = 12 hours;
-    uint256 public t3 = 24 hours;
+    uint256 public t1 = 8 hours; // B must wait for t1 to withdraw after unDeposit
+    // uint256 public t2 = 12 hours; // For receipt, not set in contract
+    uint256 public t3 = 24 hours; // B must claim in t3 after A submitProofBatch1 or A'll get paid after t3
+    uint256 public t4 = 3 days; // A must wait for t4 after unPublish
 
     uint64 public s_ = 65;
     uint256 internal constant GEN_ORDER = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
 
+    PublicVarInterface public publicVar_;
+
     /* Events */
+    event OnDeal(address indexed _a, address indexed _b, uint256 indexed _sid, TradeMode _mode, uint256 _price);
+    event OnBatch1Key(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
+    event OnBatch1Claim(address indexed _a, address indexed _b, uint256 indexed _sid);
+    event OnBatch1Deal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _price);
+    event OnBatch2Deal(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
+    event OnBatch3Deal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _d, uint256 _x0_lgs);
+    event OnVRFDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _r);
 
     /* Debug Events */
+    // event LogG1Point(uint256 _x, uint256 _y);
 
-    event LogG1Point(uint256 _x, uint256 _y);
+    constructor(address _publicVar)
+        public
+    {
+        publicVar_ = PublicVarInterface(_publicVar);
+    }
 
     /* Core Functions - Fund Related */
 
+    // TODO: minimal pledge_value
     function publish(uint64 _size, uint64 _s, uint64 _n, uint256 _sigma_mkl_root, uint256 _vrf_meta_digest, uint256 _blt_type)
         public
         payable
@@ -148,7 +182,7 @@ contract PODEX is PublicVar {
         } else {
             revert("wrong type");
         }
-        require(bulletins_[_bltKey].owner == address(0), "blt occupied");
+        require(bulletins_[_bltKey].owner == address(0) || bulletins_[_bltKey].stat == DepositStat.CANCELED, "blt occupied");
         Bulletin memory file = Bulletin({
              owner: msg.sender,
              size: _size,
@@ -159,7 +193,7 @@ contract PODEX is PublicVar {
              pledge_value: msg.value,
              unDepositAt: 0,
              blt_type: _bltType,
-             status: DepositStatus.OK
+             stat: DepositStat.OK
         });
         bulletins_[_bltKey] = file;
     }
@@ -167,8 +201,8 @@ contract PODEX is PublicVar {
     function unPublish(bytes32 _bltKey)
         public
     {
-        require(bulletins_[_bltKey].status == DepositStatus.OK);
-        bulletins_[_bltKey].status = DepositStatus.CANCELING;
+        require(bulletins_[_bltKey].stat == DepositStat.OK, "wrong stat");
+        bulletins_[_bltKey].stat = DepositStat.CANCELING;
         bulletins_[_bltKey].unDepositAt = now;
     }
 
@@ -177,31 +211,43 @@ contract PODEX is PublicVar {
         payable
     {
         buyerDeposits_[msg.sender][_to].value = buyerDeposits_[msg.sender][_to].value + msg.value;
+        if (buyerDeposits_[msg.sender][_to].stat != DepositStat.OK) {
+            buyerDeposits_[msg.sender][_to].stat = DepositStat.OK;
+        }
     }
 
     function buyerUnDeposit(address _to)
         public
     {
-        require(buyerDeposits_[msg.sender][_to].status == DepositStatus.OK);
-        buyerDeposits_[msg.sender][_to].status = DepositStatus.CANCELING;
+        require(buyerDeposits_[msg.sender][_to].pendingCnt == 0, "pending not allowed");
+        require(buyerDeposits_[msg.sender][_to].stat == DepositStat.OK, "wrong stat");
+        buyerDeposits_[msg.sender][_to].stat = DepositStat.CANCELING;
         buyerDeposits_[msg.sender][_to].unDepositAt = now;
     }
 
-    function withdraw(bytes32 _bltKey)
+    function withdrawA(bytes32 _bltKey)
         public
     {
-        require(bulletins_[_bltKey].owner == msg.sender);
-        require(bulletins_[_bltKey].status == DepositStatus.CANCELING);
-        require(now - bulletins_[_bltKey].unDepositAt > 7 days);
+        require(bulletins_[_bltKey].owner == msg.sender, "not owner");
+        require(bulletins_[_bltKey].stat == DepositStat.CANCELING, "wrong stat");
+        require(now - bulletins_[_bltKey].unDepositAt > t4, "be patient");
         // transfer
+        uint256 _value = bulletins_[_bltKey].pledge_value;
+        bulletins_[_bltKey].pledge_value = 0;
+        bulletins_[_bltKey].stat == DepositStat.CANCELED;
+        msg.sender.transfer(_value);
     }
 
-    function withdraw(address _to)
+    function withdrawB(address _to)
         public
     {
-        require(buyerDeposits_[msg.sender][_to].status == DepositStatus.CANCELING);
-        require(now - buyerDeposits_[msg.sender][_to].unDepositAt > 7 days);
+        require(buyerDeposits_[msg.sender][_to].stat == DepositStat.CANCELING, "wrong stat");
+        require(now - buyerDeposits_[msg.sender][_to].unDepositAt > t1, "be patient");
         // transfer
+        uint256 _value = buyerDeposits_[msg.sender][_to].value;
+        buyerDeposits_[msg.sender][_to].value = 0;
+        buyerDeposits_[msg.sender][_to].stat == DepositStat.CANCELED;
+        msg.sender.transfer(_value);
     }
 
     /* Core Functions - Submit Proof */
@@ -211,7 +257,7 @@ contract PODEX is PublicVar {
     (
         bytes32 _seed0,
         // receipt
-        uint256 _sessionId,
+        uint256 _sid,
         address _b,
         bytes32 _seed2,
         bytes32 _k_mkl_root,
@@ -219,14 +265,14 @@ contract PODEX is PublicVar {
         uint256 _price,
         uint256 _expireAt,
         // sig
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
+        bytes memory _sig
     )
         public
     {
+        vrfyCommon(_b, _sid, _expireAt);
+
         Batch1Receipt memory _receipt = Batch1Receipt({
-            sessionId: _sessionId,
+            sid: _sid,
             from: _b,
             seed2: _seed2,
             k_mkl_root: _k_mkl_root,
@@ -235,30 +281,51 @@ contract PODEX is PublicVar {
             expireAt: _expireAt
         });
 
-        Signature memory _sig = Signature({
-            v: _v,
-            r: _r,
-            s: _s
-        });
-
         require(checkSigBatch1(_b, _receipt, _sig), "wrong sig");
-        // require(now < _expireAt);
-        require(batch1Records[msg.sender][_b][_sessionId].receipt.from == address(0));
-        batch1Records[msg.sender][_b][_sessionId] = Batch1Record({
-            seed0: _seed0,
-            receipt: _receipt,
-            submitAt: now
-        });
+
+        setBatch1Key(msg.sender, _b, _sid, _receipt, _seed0);
     }
 
     // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
-    function claimBatch1(address _a, uint256 _sessionId, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
+    function claimBatch1(address _a, uint256 _sid, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
         public
     {
+        require(sessionRecords_[_a][msg.sender][_sid].stat == TradeStat.WAIT, "wrong stat");
+        require(now - sessionRecords_[_a][msg.sender][_sid].submitAt < t3, "timeout");
         // loadReceipt
-        Batch1Record memory _record = batch1Records[_a][msg.sender][_sessionId];
-        require(verifyProofBatch1(_i, _j, _sCnt, _tx, _ty, _record, _mkl_path));
+        Batch1Record memory _record = batch1Records_[_a][msg.sender][_sid];
+        require(vrfyProofBatch1(_i, _j, _sCnt, _tx, _ty, _record, _mkl_path), "invalid proof");
+
+        // return back money
+        sessionRecords_[_a][msg.sender][_sid].stat = TradeStat.CLAIMED;
+        uint256 _value = buyerDeposits_[msg.sender][_a].value;
+        buyerDeposits_[msg.sender][_a].value = 0;
+        msg.sender.transfer(_value);
+
+        // TODO: panish evil A
+        buyerDeposits_[msg.sender][_a].pendingCnt -= 1;
+
+        emit OnBatch1Claim(_a, msg.sender, _sid);
+    }
+
+    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
+    // TODO: discount if b confirm order before timeout
+    function settleBatch1Deal(address payable _a, address _b, uint256 _sid)
+        public
+    {
+        require(sessionRecords_[_a][_b][_sid].stat == TradeStat.WAIT, "wrong stat");
+        require(now - sessionRecords_[_a][_b][_sid].submitAt >= t3, "timeout");
+
+        uint256 _value = batch1Records_[_a][_b][_sid].receipt.price;
+
         // transfer
+        settleBalance(_b, _a, _value);
+
+        sessionRecords_[_a][_b][_sid].stat == TradeStat.DEAL;
+        buyerDeposits_[_b][_a].pendingCnt -= 1;
+
+        emit OnBatch1Deal(_a, _b, _sid, _value);
+        emit OnDeal(_a, _b, _sid, TradeMode.BATCH1, _value);
     }
 
     // mode: plain (TODO), table (batch2_pod)
@@ -267,7 +334,7 @@ contract PODEX is PublicVar {
         bytes32 _seed0,
         uint64 _sCnt,
         // receipt
-        uint256 _sessionId,
+        uint256 _sid,
         address _b,
         bytes32 _seed2,
         uint256 _sigma_vw,
@@ -275,15 +342,14 @@ contract PODEX is PublicVar {
         uint256 _price,
         uint256 _expireAt,
         // sig
-        uint8 _v,
-        // bytes32 _r,
-        // bytes32 _s
-        bytes32[2] memory _rs
+        bytes memory _sig
     )
         public
     {
+        vrfyCommon(_b, _sid, _expireAt);
+
         Batch2Receipt memory _receipt = Batch2Receipt({
-            sessionId: _sessionId,
+            sid: _sid,
             from: _b,
             seed2: _seed2,
             sigma_vw: _sigma_vw,
@@ -292,41 +358,30 @@ contract PODEX is PublicVar {
             expireAt: _expireAt
         });
 
-        Signature memory _sig = Signature({
-            v: _v,
-            r: _rs[0],
-            s: _rs[1]
-        });
-
         require(checkSigBatch2(_b, _receipt, _sig), "wrong sig");
-        // require(now < _expireAt);
-        require(batch2Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
-        require(verifyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
-        // transfer
-        batch2Records_[msg.sender][_b][_sessionId] = Batch2Record({
-            seed0: _seed0,
-            submitAt: now
-        });
+        require(vrfyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
+
+        setBatch2Deal(msg.sender, _b, _sid, _price, _seed0);
     }
 
     // mode: plain (batch3_pod), table (batch3_pod)
     function submitProofBatch3
     (
         uint256 _s_d, uint256 _s_x0_lgs,
-        uint256 _sessionId,
+        uint256 _sid,
         address _b,
         uint256[2] memory _r_u0_x0_lgs,
         uint256[2] memory _r_u0d,
         uint256 _price,
         uint256 _expireAt,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
+        bytes memory _sig
     )
         public
     {
+        vrfyCommon(_b, _sid, _expireAt);
+
         Batch3Receipt memory _receipt = Batch3Receipt({
-            sessionId: _sessionId,
+            sid: _sid,
             from: _b,
             u0_x0_lgs: G1Point(_r_u0_x0_lgs[0], _r_u0_x0_lgs[1]),
             u0d: G1Point(_r_u0d[0], _r_u0d[1]),
@@ -334,22 +389,10 @@ contract PODEX is PublicVar {
             expireAt: _expireAt
         });
 
-        Signature memory _sig = Signature({
-            v: _v,
-            r: _r,
-            s: _s
-        });
-
         require(checkSigBatch3(_b, _receipt, _sig), "wrong sig");
-        // require(now < _expireAt);
-        require(batch3Records_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
-        require(verifyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
-        // transfer
-        batch3Records_[msg.sender][_b][_sessionId] = Batch3Record({
-            d: _s_d,
-            x0_lgs: _s_x0_lgs,
-            submitAt: now
-        });
+        require(vrfyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
+
+        setBatch3Deal(msg.sender, _b, _sid, _price, _s_d, _s_x0_lgs);
     }
 
     // mode: table (vrf_query/ot_vrf_query)
@@ -357,66 +400,154 @@ contract PODEX is PublicVar {
     (
         uint256 _s_r, // secret r
         // receipt
-        uint256 _sessionId,
+        uint256 _sid,
         address _b,
         uint256[2] memory _g_exp_r,
         uint256 _price,
         uint256 _expireAt,
         // sig
-        uint8 _v,
-        // bytes32 _r,
-        // bytes32 _s
-        bytes32[2] memory _rs
+        bytes memory _sig
     )
         public
     {
+        vrfyCommon(_b, _sid, _expireAt);
+
         VRFReceipt memory _receipt = VRFReceipt({
-            sessionId: _sessionId,
+            sid: _sid,
             from: _b,
             g_exp_r: G1Point(_g_exp_r[0], _g_exp_r[1]),
             price: _price,
             expireAt: _expireAt
         });
 
-        Signature memory _sig = Signature({
-            v: _v,
-            r: _rs[0],
-            s: _rs[1]
+        require(checkSigVRF(_b, _receipt, _sig), "wrong sig");
+        require(vrfyProofVRF(_g_exp_r, _s_r), "invalid proof");
+
+        setVRFDeal(msg.sender, _b, _sid, _price, _s_r);
+    }
+
+    /* Helper Functions - Settle */
+
+    function settleBalance(address _b, address payable _a, uint256 _value)
+        internal
+    {
+        uint256 _balance = buyerDeposits_[_b][_a].value;
+        require(_balance >= _value, "short balance");
+        buyerDeposits_[_b][_a].value = _balance - _value;
+        _a.transfer(_value);
+    }
+
+    function setBatch1Key(address _a, address _b, uint256 _sid, Batch1Receipt memory _receipt, bytes32 _seed0)
+        internal
+    {
+        batch1Records_[_a][_b][_sid] = Batch1Record({
+            seed0: _seed0,
+            receipt: _receipt
+        });
+        sessionRecords_[_a][_b][_sid] = SessionRecord({
+            submitAt: now,
+            mode: TradeMode.BATCH1,
+            stat: TradeStat.WAIT
+        });
+        buyerDeposits_[_b][_a].pendingCnt += 1;
+
+        emit OnBatch1Key(_a, _b, _sid, _seed0);
+    }
+
+    function setBatch2Deal(address payable _a, address _b, uint256 _sid, uint256 _price, bytes32 _seed0)
+        internal
+    {
+        batch2Records_[_a][_b][_sid] = Batch2Record({
+            seed0: _seed0
+        });
+        sessionRecords_[_a][_b][_sid] = SessionRecord({
+            submitAt: now,
+            mode: TradeMode.BATCH2,
+            stat: TradeStat.DEAL
         });
 
-        require(checkSigVRF(_b, _receipt, _sig), "wrong sig");
-        // require(now < _expireAt);
-        require(vrfRecords_[msg.sender][_b][_sessionId].submitAt == 0, "not new");
-        require(verifyProofVRF(_g_exp_r, _s_r), "invalid proof");
         // transfer
-        vrfRecords_[msg.sender][_b][_sessionId] = VRFRecord({
-            r: _s_r,
-            submitAt: now
+        settleBalance(_b, _a, _price);
+
+        emit OnBatch2Deal(_a, _b, _sid, _seed0);
+        emit OnDeal(_a, _b, _sid, TradeMode.BATCH2, _price);
+    }
+
+    function setBatch3Deal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_d, uint256 _s_x0_lgs)
+        internal
+    {
+        batch3Records_[_a][_b][_sid] = Batch3Record({
+            d: _s_d,
+            x0_lgs: _s_x0_lgs
         });
+        sessionRecords_[_a][_b][_sid] = SessionRecord({
+            submitAt: now,
+            mode: TradeMode.BATCH3,
+            stat: TradeStat.DEAL
+        });
+
+        // transfer
+        settleBalance(_b, _a, _price);
+
+        emit OnBatch3Deal(_a, _b, _sid, _s_d, _s_x0_lgs);
+        emit OnDeal(_a, _b, _sid, TradeMode.BATCH3, _price);
+    }
+
+    function setVRFDeal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_r)
+        internal
+    {
+        vrfRecords_[_a][_b][_sid] = VRFRecord({
+            r: _s_r
+        });
+        sessionRecords_[_a][_b][_sid] = SessionRecord({
+            submitAt: now,
+            mode: TradeMode.VRF,
+            stat: TradeStat.DEAL
+        });
+
+        // transfer
+        settleBalance(_b, _a, _price);
+
+        emit OnVRFDeal(_a, _b, _sid, _s_r);
+        emit OnDeal(_a, _b, _sid, TradeMode.VRF, _price);
     }
 
     /* Helper Functions - Verify Proof */
 
-    function verifyProofBatch1(uint64 _i, uint64 _j, uint64 _sCnt, uint256 _tx, uint256 _ty, Batch1Record memory _record, bytes32[] memory _mkl_path)
+    function vrfyCommon(address _b, uint256 _sid, uint256 _expireAt)
         internal
+    {
+        require(sessionRecords_[msg.sender][_b][_sid].submitAt == 0, "not new");
+        // require(now < _expireAt, "expired");
+        DepositStat _stat = buyerDeposits_[_b][msg.sender].stat;
+        require(_stat != DepositStat.CANCELED, "deposit canceled");
+        if (_stat == DepositStat.CANCELING) {
+            buyerDeposits_[_b][msg.sender].stat = DepositStat.OK;
+        }
+    }
+
+    function vrfyProofBatch1(uint64 _i, uint64 _j, uint64 _sCnt, uint256 _tx, uint256 _ty, Batch1Record memory _record, bytes32[] memory _mkl_path)
+        internal
+        view
         returns (bool)
     {
-        // verify mkl path
+        // vrfy mkl path
         // TODO: think about overflow here
         uint64 _index = _i*_sCnt + _j;
         bytes32 _x = convertToBE(bytes32(_tx));
         bytes32 _y = convertToBE(bytes32(_ty));
-        require(verifyPath(_x, _y, _index, _record.receipt.count*_sCnt, _record.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
+        require(vrfyPath(_x, _y, _index, _record.receipt.count*_sCnt, _record.receipt.k_mkl_root, _mkl_path), "invalid mkl proof");
         // derive k
         uint256 _v = chain(_record.seed0, _index);
         // calc u^v
-        G1Point memory _check = scalarMul(ecc_pub_u1_[_j].X, ecc_pub_u1_[_j].Y, _v);
-        emit LogG1Point(_check.X, _check.Y);
+        (uint256 _u1_x, uint256 _u1_y) = publicVar_.getEccPubU1(_j);
+        G1Point memory _check = scalarMul(_u1_x, _u1_y, _v);
+        // emit LogG1Point(_check.X, _check.Y);
         require(_check.X != _tx || _check.Y != _ty, "invalid claim");
         return true;
     }
 
-    function verifyProofBatch2(
+    function vrfyProofBatch2(
         uint64 count, uint64 s,
         bytes32 seed0, bytes32 seed2,
         uint sigma_vw
@@ -436,10 +567,10 @@ contract PODEX is PublicVar {
             check_sigma_vw = addmod(check_sigma_vw, v, GEN_ORDER);
         }
 
-        for(uint64 i=0; i<count; i++){
+        for(uint64 i = 0; i < count; i++){
             sigma_v = 0;
             w = chain(seed2, i);
-            for(uint64 j=0; j<s; j++){
+            for(uint64 j = 0; j < s; j++){
                 v = chain(seed0, i*s+j);
                 sigma_v = addmod(sigma_v, v, GEN_ORDER);
             }
@@ -449,7 +580,7 @@ contract PODEX is PublicVar {
         return check_sigma_vw == sigma_vw;
     }
 
-    function verifyProofBatch3(
+    function vrfyProofBatch3(
         uint256[2] memory _r_u0d,
         uint256[2] memory  _r_u0_x0_lgs,
         uint256 _s_d, uint256 _s_x0_lgs
@@ -458,8 +589,7 @@ contract PODEX is PublicVar {
         view
         returns (bool)
     {
-        uint256 _u1_x = ecc_pub_u1_[0].X;
-        uint256 _u1_y = ecc_pub_u1_[0].Y;
+        (uint256 _u1_x, uint256 _u1_y) = publicVar_.getEccPubU1(0);
         G1Point memory _check = scalarMul(_u1_x, _u1_y, _s_d);
         require(_r_u0d[0] == _check.X && _r_u0d[1] == _check.Y, "wrong d");
         _check = scalarMul(_u1_x, _u1_y, _s_x0_lgs);
@@ -467,7 +597,7 @@ contract PODEX is PublicVar {
         return true;
     }
 
-    function verifyProofVRF(
+    function vrfyProofVRF(
         uint256[2] memory _g_exp_r,
         uint256 _s_r
     )
@@ -481,7 +611,7 @@ contract PODEX is PublicVar {
         return true;
     }
 
-    function verifyPath(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
+    function vrfyPath(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
         public
         pure
         returns (bool)
@@ -546,7 +676,7 @@ contract PODEX is PublicVar {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require (success);
+        require (success, "failed");
     }
 
     function log2ub(uint256 _n)
@@ -577,54 +707,64 @@ contract PODEX is PublicVar {
 
     /* Helper Functions - Receipt Signature */
 
-    function prefixed(bytes32 hash)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-    }
-
-
-    function checkSigBatch1(address addr, Batch1Receipt memory r1, Signature memory sig)
+    function checkSigBatch1(address addr, Batch1Receipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
-        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
+        return checkSig(addr, hash, sig);
     }
 
-    function checkSigBatch2(address addr, Batch2Receipt memory r1, Signature memory sig)
+    function checkSigBatch2(address addr, Batch2Receipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
-        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
+        return checkSig(addr, hash, sig);
     }
 
-    function checkSigBatch3(address addr, Batch3Receipt memory r1, Signature memory sig)
+    function checkSigBatch3(address addr, Batch3Receipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.u0_x0_lgs.X, r1.u0_x0_lgs.Y, r1.u0d.X, r1.u0d.Y, r1.price, r1.expireAt));
-        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.u0_x0_lgs.X, r1.u0_x0_lgs.Y, r1.u0d.X, r1.u0d.Y, r1.price, r1.expireAt));
+        return checkSig(addr, hash, sig);
     }
 
-    function checkSigVRF(address addr, VRFReceipt memory r1, Signature memory sig)
+    function checkSigVRF(address addr, VRFReceipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sessionId, r1.from, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
-        return addr == ecrecover(prefixed(hash), sig.v, sig.r, sig.s);
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
+        return checkSig(addr, hash, sig);
+    }
+
+    function checkSig(address addr, bytes32 hash, bytes memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        return addr == ECDSA.recover(ECDSA.toEthSignedMessageHash(hash), sig);
     }
 
     /* Public Getters */
 
-    function getRecordBatch1(address _a, address _b, uint256 _sessionId)
+    function getSessionRecord(address _a, address _b, uint256 _sid)
+        public
+        view
+        returns (uint256 submitAt, TradeMode mode, TradeStat stat)
+    {
+        SessionRecord memory _sRecord = sessionRecords_[_a][_b][_sid];
+        submitAt = _sRecord.submitAt;
+        mode = _sRecord.mode;
+        stat = _sRecord.stat;
+    }
+
+    function getRecordBatch1(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -637,17 +777,17 @@ contract PODEX is PublicVar {
             uint256 submitAt
         )
     {
-        Batch1Record memory _record = batch1Records[_a][_b][_sessionId];
+        Batch1Record memory _record = batch1Records_[_a][_b][_sid];
         seed0 = _record.seed0;
         seed2 = _record.receipt.seed2;
         k_mkl_root = _record.receipt.k_mkl_root;
         count = _record.receipt.count;
         price = _record.receipt.price;
         expireAt = _record.receipt.expireAt;
-        submitAt = _record.submitAt;
+        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
-    function getRecordBatch2(address _a, address _b, uint256 _sessionId)
+    function getRecordBatch2(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -655,12 +795,12 @@ contract PODEX is PublicVar {
             uint256 submitAt
         )
     {
-        Batch2Record memory _record = batch2Records_[_a][_b][_sessionId];
+        Batch2Record memory _record = batch2Records_[_a][_b][_sid];
         seed0 = _record.seed0;
-        submitAt = _record.submitAt;
+        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
-    function getRecordBatch3(address _a, address _b, uint256 _sessionId)
+    function getRecordBatch3(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -669,13 +809,13 @@ contract PODEX is PublicVar {
             uint256 submitAt
         )
     {
-        Batch3Record memory _record = batch3Records_[_a][_b][_sessionId];
+        Batch3Record memory _record = batch3Records_[_a][_b][_sid];
         d = _record.d;
         x0_lgs = _record.x0_lgs;
-        submitAt = _record.submitAt;
+        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
-    function getRecordVRF(address _a, address _b, uint256 _sessionId)
+    function getRecordVRF(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -683,9 +823,9 @@ contract PODEX is PublicVar {
             uint256 submitAt
         )
     {
-        VRFRecord memory _record = vrfRecords_[_a][_b][_sessionId];
+        VRFRecord memory _record = vrfRecords_[_a][_b][_sid];
         r = _record.r;
-        submitAt = _record.submitAt;
+        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
 }

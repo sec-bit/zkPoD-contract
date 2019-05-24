@@ -1,21 +1,12 @@
 [
 	{
 		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "ecc_pub_u1_",
+		"inputs": [],
+		"name": "publicVar_",
 		"outputs": [
 			{
-				"name": "X",
-				"type": "uint256"
-			},
-			{
-				"name": "Y",
-				"type": "uint256"
+				"name": "",
+				"type": "address"
 			}
 		],
 		"payable": false,
@@ -45,22 +36,12 @@
 				"type": "uint256"
 			},
 			{
-				"name": "status",
-				"type": "uint8"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "t2",
-		"outputs": [
-			{
-				"name": "",
+				"name": "pendingCnt",
 				"type": "uint256"
+			},
+			{
+				"name": "stat",
+				"type": "uint8"
 			}
 		],
 		"payable": false,
@@ -142,7 +123,7 @@
 				"type": "uint8"
 			},
 			{
-				"name": "status",
+				"name": "stat",
 				"type": "uint8"
 			}
 		],
@@ -165,20 +146,222 @@
 		"type": "function"
 	},
 	{
+		"constant": true,
+		"inputs": [],
+		"name": "t4",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_publicVar",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"name": "_x",
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
-				"name": "_y",
+				"name": "_mode",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"name": "_price",
 				"type": "uint256"
 			}
 		],
-		"name": "LogG1Point",
+		"name": "OnDeal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_seed0",
+				"type": "bytes32"
+			}
+		],
+		"name": "OnBatch1Key",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch1Claim",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_price",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch1Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_seed0",
+				"type": "bytes32"
+			}
+		],
+		"name": "OnBatch2Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_d",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_x0_lgs",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch3Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_r",
+				"type": "uint256"
+			}
+		],
+		"name": "OnVRFDeal",
 		"type": "event"
 	},
 	{
@@ -261,11 +444,11 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_to",
-				"type": "address"
+				"name": "_bltKey",
+				"type": "bytes32"
 			}
 		],
-		"name": "withdraw",
+		"name": "withdrawA",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -275,11 +458,11 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_bltKey",
-				"type": "bytes32"
+				"name": "_to",
+				"type": "address"
 			}
 		],
-		"name": "withdraw",
+		"name": "withdrawB",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -293,7 +476,7 @@
 				"type": "bytes32"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
@@ -321,16 +504,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_v",
-				"type": "uint8"
-			},
-			{
-				"name": "_r",
-				"type": "bytes32"
-			},
-			{
-				"name": "_s",
-				"type": "bytes32"
+				"name": "_sig",
+				"type": "bytes"
 			}
 		],
 		"name": "submitProofBatch1",
@@ -347,7 +522,7 @@
 				"type": "address"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
@@ -385,6 +560,28 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "settleBatch1Deal",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "_seed0",
 				"type": "bytes32"
 			},
@@ -393,7 +590,7 @@
 				"type": "uint64"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
@@ -421,12 +618,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_v",
-				"type": "uint8"
-			},
-			{
-				"name": "_rs",
-				"type": "bytes32[2]"
+				"name": "_sig",
+				"type": "bytes"
 			}
 		],
 		"name": "submitProofBatch2",
@@ -447,7 +640,7 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
@@ -471,16 +664,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_v",
-				"type": "uint8"
-			},
-			{
-				"name": "_r",
-				"type": "bytes32"
-			},
-			{
-				"name": "_s",
-				"type": "bytes32"
+				"name": "_sig",
+				"type": "bytes"
 			}
 		],
 		"name": "submitProofBatch3",
@@ -497,7 +682,7 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			},
 			{
@@ -517,12 +702,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_v",
-				"type": "uint8"
-			},
-			{
-				"name": "_rs",
-				"type": "bytes32[2]"
+				"name": "_sig",
+				"type": "bytes"
 			}
 		],
 		"name": "submitProofVRF",
@@ -555,7 +736,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "verifyProofBatch2",
+		"name": "vrfyProofBatch2",
 		"outputs": [
 			{
 				"name": "",
@@ -586,7 +767,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "verifyProofBatch3",
+		"name": "vrfyProofBatch3",
 		"outputs": [
 			{
 				"name": "",
@@ -609,7 +790,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "verifyProofVRF",
+		"name": "vrfyProofVRF",
 		"outputs": [
 			{
 				"name": "",
@@ -648,7 +829,7 @@
 				"type": "bytes32[]"
 			}
 		],
-		"name": "verifyPath",
+		"name": "vrfyPath",
 		"outputs": [
 			{
 				"name": "",
@@ -759,7 +940,42 @@
 				"type": "address"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getSessionRecord",
+		"outputs": [
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			},
+			{
+				"name": "mode",
+				"type": "uint8"
+			},
+			{
+				"name": "stat",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
 				"type": "uint256"
 			}
 		],
@@ -810,7 +1026,7 @@
 				"type": "address"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			}
 		],
@@ -841,7 +1057,7 @@
 				"type": "address"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			}
 		],
@@ -876,7 +1092,7 @@
 				"type": "address"
 			},
 			{
-				"name": "_sessionId",
+				"name": "_sid",
 				"type": "uint256"
 			}
 		],
