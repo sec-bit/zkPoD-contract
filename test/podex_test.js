@@ -106,18 +106,34 @@ contract("PODEX", async (accounts) => {
         let signature = await web3.eth.sign(hash, buyer);
         // console.log("signature:", signature);
 
-        await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller});
+        // before submit
+        let bdpsitBefore = await podex.buyerDeposits_(buyer, seller);
+
+        // session record
+        let _result = await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller});
+        let _txblock = await web3.eth.getBlock(_result.receipt.blockNumber);
+        let _sRecord = await podex.getSessionRecord(seller, buyer, _sessionId);
+        assert.equal(_sRecord.submitAt.toNumber(), _txblock.timestamp, "wrong time");
+        assert.equal(_sRecord.mode, 0, "wrong mode");
+        assert.equal(_sRecord.stat, 1, "wrong stat");
+
+        // event
+        await truffleAssert.eventEmitted(_result, 'OnBatch1Key', { _a: seller, _b: buyer });
+
+        // buyerDeposits_
+        let bdpsitAfter = await podex.buyerDeposits_(buyer, seller);
+        assert.equal(bdpsitAfter.pendingCnt, bdpsitBefore.pendingCnt.toNumber()+1, "wrong pending cnt");
 
         await truffleAssert.reverts(
             podex.submitProofBatch1(_seed0, _sessionId, buyer, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller})
         );
     });
 
+
     it("should submitProofBatch1 correctly (for evil)", async () => {
         let path = testdataPath + "/batch1/evil";
         let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
         let secret = JSON.parse(fs.readFileSync(path + "/secret"));
-        let claim = JSON.parse(fs.readFileSync(path + "/claim"));
 
         // let _sessionId = Math.random().toString().slice(2, 17);
         let _sessionId = 1;
@@ -126,13 +142,19 @@ contract("PODEX", async (accounts) => {
         let _seed2 = "0x" + receipt.s;
         let _k_mkl_root = "0x" + receipt.k;
         let _count = receipt.c;
-        let _price = 0;
+        let _price = web3.utils.toWei('0.5', 'ether');
         let _expireAt = 0;
 
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, buyer);
 
         await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller });
+
+
+        await truffleAssert.reverts(
+            podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller }),
+            "not new"
+        )
     });
 
     it("should claimBatch1 correctly (for evil)", async () => {
