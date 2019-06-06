@@ -1,11 +1,11 @@
 const ECDSA = artifacts.require("ECDSA");
 const PublicVar = artifacts.require("PublicVar");
-const PODEX = artifacts.require("PODEX");
+const zkPoDExchange = artifacts.require("zkPoDExchange");
 
 module.exports = function(deployer) {
   deployer.deploy(ECDSA);
-  deployer.link(ECDSA, PODEX);
+  deployer.link(ECDSA, zkPoDExchange);
   deployer.deploy(PublicVar).then(function() {
-    return deployer.deploy(PODEX, PublicVar.address);
+    return deployer.deploy(zkPoDExchange, PublicVar.address);
   });
 };

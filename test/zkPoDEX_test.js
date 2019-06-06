@@ -1,27 +1,27 @@
-const PODEX = artifacts.require("PODEX");
+const zkPoDExchange = artifacts.require("zkPoDExchange");
 const { getWeb3 } = require("./helpers");
 const web3 = getWeb3();
 const fs = require('fs');
 const testdataPath = "test/testdata";
 const truffleAssert = require('truffle-assertions');
 
-contract("PODEX", async (accounts) => {
+contract("zkPoDExchange", async (accounts) => {
 
-    let podex;
+    let zkPoDEX;
 
     let seller = accounts[0];
     let buyer = accounts[1];
 
     before(async () => {
-        podex = await PODEX.deployed();
+        zkPoDEX = await zkPoDExchange.deployed();
     });
 
     it("should keep basic settings", async () => {
-        let s = await podex.s_();
-        let t1 = await podex.t1();
-        // let t2 = await podex.t2();
-        let t3 = await podex.t3();
-        let t4 = await podex.t4()
+        let s = await zkPoDEX.s_();
+        let t1 = await zkPoDEX.t1();
+        // let t2 = await zkPoDEX.t2();
+        let t3 = await zkPoDEX.t3();
+        let t4 = await zkPoDEX.t4()
         assert.equal(s, 65, "max s count changed");
         assert.equal(t1, 8 * 60 * 60, "t1 changed");
         // assert.equal(t2, 12 * 60 * 60, "t2 changed");
@@ -38,10 +38,10 @@ contract("PODEX", async (accounts) => {
         let _sigma_mkl_root = "0x" + blt.sigma_mkl_root;
         let _blt_type = 0;
 
-        await podex.publish(_size, _s, _n, _sigma_mkl_root, 0, _blt_type);
+        await zkPoDEX.publish(_size, _s, _n, _sigma_mkl_root, 0, _blt_type);
 
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _size }, { t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root });
-        let bulletin = await podex.bulletins_(_bltKey);
+        let bulletin = await zkPoDEX.bulletins_(_bltKey);
 
         assert.equal(bulletin.owner, seller, "wrong owner");
         assert.equal(bulletin.size, blt.size, "wrong size");
@@ -52,7 +52,7 @@ contract("PODEX", async (accounts) => {
         assert.equal(bulletin.blt_type, _blt_type, "wrong blt_type");
 
         await truffleAssert.reverts(
-            podex.publish(_size, _s, _n, _sigma_mkl_root, 0, _blt_type),
+            zkPoDEX.publish(_size, _s, _n, _sigma_mkl_root, 0, _blt_type),
             "blt occupied"
         );
 
@@ -68,10 +68,10 @@ contract("PODEX", async (accounts) => {
         let _vrf_meta_digest = "0x" + blt.vrf_meta_digest;
         let _blt_type = 1;
 
-        await podex.publish(_size, _s, _n, _sigma_mkl_root, _vrf_meta_digest, _blt_type);
+        await zkPoDEX.publish(_size, _s, _n, _sigma_mkl_root, _vrf_meta_digest, _blt_type);
 
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root }, { t: 'uint256', v: _vrf_meta_digest });
-        let bulletin = await podex.bulletins_(_bltKey);
+        let bulletin = await zkPoDEX.bulletins_(_bltKey);
 
         assert.equal(bulletin.owner, seller, "wrong owner");
         assert.equal(bulletin.s, blt.s, "wrong s");
@@ -82,7 +82,7 @@ contract("PODEX", async (accounts) => {
         assert.equal(bulletin.blt_type, _blt_type, "wrong blt_type");
 
         await truffleAssert.reverts(
-            podex.publish(_size, _s, _n, _sigma_mkl_root, _vrf_meta_digest, _blt_type),
+            zkPoDEX.publish(_size, _s, _n, _sigma_mkl_root, _vrf_meta_digest, _blt_type),
             "blt occupied"
         );
     });
@@ -107,12 +107,12 @@ contract("PODEX", async (accounts) => {
         // console.log("signature:", signature);
 
         // before submit
-        let bdpsitBefore = await podex.buyerDeposits_(buyer, seller);
+        let bdpsitBefore = await zkPoDEX.buyerDeposits_(buyer, seller);
 
         // session record
-        let _result = await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller});
+        let _result = await zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller});
         let _txblock = await web3.eth.getBlock(_result.receipt.blockNumber);
-        let _sRecord = await podex.getSessionRecord(seller, buyer, _sessionId);
+        let _sRecord = await zkPoDEX.getSessionRecord(seller, buyer, _sessionId);
         assert.equal(_sRecord.submitAt.toNumber(), _txblock.timestamp, "wrong time");
         assert.equal(_sRecord.mode, 0, "wrong mode");
         assert.equal(_sRecord.stat, 1, "wrong stat");
@@ -121,11 +121,11 @@ contract("PODEX", async (accounts) => {
         await truffleAssert.eventEmitted(_result, 'OnBatch1Key', { _a: seller, _b: buyer });
 
         // buyerDeposits_
-        let bdpsitAfter = await podex.buyerDeposits_(buyer, seller);
+        let bdpsitAfter = await zkPoDEX.buyerDeposits_(buyer, seller);
         assert.equal(bdpsitAfter.pendingCnt, bdpsitBefore.pendingCnt.toNumber()+1, "wrong pending cnt");
 
         await truffleAssert.reverts(
-            podex.submitProofBatch1(_seed0, _sessionId, buyer, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller})
+            zkPoDEX.submitProofBatch1(_seed0, _sessionId, buyer, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller})
         );
     });
 
@@ -148,11 +148,11 @@ contract("PODEX", async (accounts) => {
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, buyer);
 
-        await podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller });
+        await zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller });
 
 
         await truffleAssert.reverts(
-            podex.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller }),
+            zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller }),
             "not new"
         )
     });
@@ -174,7 +174,7 @@ contract("PODEX", async (accounts) => {
             return '0x' + i;
         })
 
-        await podex.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer })
+        await zkPoDEX.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer })
     });
 
     it("should claimBatch1 fail (for not evil)", async () => {
@@ -195,7 +195,7 @@ contract("PODEX", async (accounts) => {
         })
 
         await truffleAssert.reverts(
-            podex.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer }),
+            zkPoDEX.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer }),
             "invalid mkl proof"
         )
     });
@@ -219,9 +219,9 @@ contract("PODEX", async (accounts) => {
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, buyer);
 
-        await podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller })
+        await zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller })
 
-        await truffleAssert.reverts(podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "not new")
+        await truffleAssert.reverts(zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "not new")
     });
 
     it("should submitProofBatch2 fail (evil)", async () => {
@@ -243,7 +243,7 @@ contract("PODEX", async (accounts) => {
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, buyer);
 
-        await truffleAssert.reverts(podex.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "invalid proof")
+        await truffleAssert.reverts(zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "invalid proof")
     });
 
     // it("", async () => {
