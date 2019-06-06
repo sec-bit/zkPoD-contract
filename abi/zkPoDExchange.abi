@@ -325,38 +325,6 @@
 			},
 			{
 				"indexed": false,
-				"name": "_d",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"name": "_x0_lgs",
-				"type": "uint256"
-			}
-		],
-		"name": "OnBatch3Deal",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"name": "_a",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"name": "_b",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"name": "_sid",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
 				"name": "_r",
 				"type": "uint256"
 			}
@@ -632,52 +600,6 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_s_d",
-				"type": "uint256"
-			},
-			{
-				"name": "_s_x0_lgs",
-				"type": "uint256"
-			},
-			{
-				"name": "_sid",
-				"type": "uint256"
-			},
-			{
-				"name": "_b",
-				"type": "address"
-			},
-			{
-				"name": "_r_u0_x0_lgs",
-				"type": "uint256[2]"
-			},
-			{
-				"name": "_r_u0d",
-				"type": "uint256[2]"
-			},
-			{
-				"name": "_price",
-				"type": "uint256"
-			},
-			{
-				"name": "_expireAt",
-				"type": "uint256"
-			},
-			{
-				"name": "_sig",
-				"type": "bytes"
-			}
-		],
-		"name": "submitProofBatch3",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
 				"name": "_s_r",
 				"type": "uint256"
 			},
@@ -745,37 +667,6 @@
 		],
 		"payable": false,
 		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_r_u0d",
-				"type": "uint256[2]"
-			},
-			{
-				"name": "_r_u0_x0_lgs",
-				"type": "uint256[2]"
-			},
-			{
-				"name": "_s_d",
-				"type": "uint256"
-			},
-			{
-				"name": "_s_x0_lgs",
-				"type": "uint256"
-			}
-		],
-		"name": "vrfyProofBatch3",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -1035,41 +926,6 @@
 			{
 				"name": "seed0",
 				"type": "bytes32"
-			},
-			{
-				"name": "submitAt",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_a",
-				"type": "address"
-			},
-			{
-				"name": "_b",
-				"type": "address"
-			},
-			{
-				"name": "_sid",
-				"type": "uint256"
-			}
-		],
-		"name": "getRecordBatch3",
-		"outputs": [
-			{
-				"name": "d",
-				"type": "uint256"
-			},
-			{
-				"name": "x0_lgs",
-				"type": "uint256"
 			},
 			{
 				"name": "submitAt",

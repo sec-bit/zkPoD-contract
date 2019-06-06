@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./interface/PublicVarInterface.sol";
 import "./lib/ECDSA.sol";
 
-contract PODEX {
+contract zkPoDExchange {
 
     struct Bulletin {
         address owner;
@@ -48,15 +48,6 @@ contract PODEX {
         uint256 expireAt;
     }
 
-    struct Batch3Receipt {
-        uint256 sid;
-        address from;
-        G1Point u0_x0_lgs;
-        G1Point u0d;
-        uint256 price;
-        uint256 expireAt;
-    }
-
     struct VRFReceipt {
         uint256 sid;
         address from;
@@ -79,11 +70,6 @@ contract PODEX {
 
     struct Batch2Record {
         bytes32 seed0;
-    }
-
-    struct Batch3Record {
-        uint256 d;
-        uint256 x0_lgs;
     }
 
     struct VRFRecord {
@@ -119,7 +105,6 @@ contract PODEX {
     enum TradeMode {
         BATCH1,
         BATCH2,
-        BATCH3,
         VRF
     }
 
@@ -132,7 +117,6 @@ contract PODEX {
     mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
     mapping (address => mapping(address => mapping(uint256 => Batch1Record))) internal batch1Records_;
     mapping (address => mapping(address => mapping(uint256 => Batch2Record))) internal batch2Records_;
-    mapping (address => mapping(address => mapping(uint256 => Batch3Record))) internal batch3Records_;
     mapping (address => mapping(address => mapping(uint256 => VRFRecord))) internal vrfRecords_;
 
     /* Variables */
@@ -152,7 +136,6 @@ contract PODEX {
     event OnBatch1Claim(address indexed _a, address indexed _b, uint256 indexed _sid);
     event OnBatch1Deal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _price);
     event OnBatch2Deal(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
-    event OnBatch3Deal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _d, uint256 _x0_lgs);
     event OnVRFDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _r);
 
     /* Debug Events */
@@ -364,37 +347,6 @@ contract PODEX {
         setBatch2Deal(msg.sender, _b, _sid, _price, _seed0);
     }
 
-    // mode: plain (batch3_pod), table (batch3_pod)
-    function submitProofBatch3
-    (
-        uint256 _s_d, uint256 _s_x0_lgs,
-        uint256 _sid,
-        address _b,
-        uint256[2] memory _r_u0_x0_lgs,
-        uint256[2] memory _r_u0d,
-        uint256 _price,
-        uint256 _expireAt,
-        bytes memory _sig
-    )
-        public
-    {
-        vrfyCommon(_b, _sid, _expireAt);
-
-        Batch3Receipt memory _receipt = Batch3Receipt({
-            sid: _sid,
-            from: _b,
-            u0_x0_lgs: G1Point(_r_u0_x0_lgs[0], _r_u0_x0_lgs[1]),
-            u0d: G1Point(_r_u0d[0], _r_u0d[1]),
-            price: _price,
-            expireAt: _expireAt
-        });
-
-        require(checkSigBatch3(_b, _receipt, _sig), "wrong sig");
-        require(vrfyProofBatch3(_r_u0d, _r_u0_x0_lgs, _s_d, _s_x0_lgs), "invalid proof");
-
-        setBatch3Deal(msg.sender, _b, _sid, _price, _s_d, _s_x0_lgs);
-    }
-
     // mode: table (vrf_query/ot_vrf_query)
     function submitProofVRF
     (
@@ -471,26 +423,6 @@ contract PODEX {
 
         emit OnBatch2Deal(_a, _b, _sid, _seed0);
         emit OnDeal(_a, _b, _sid, TradeMode.BATCH2, _price);
-    }
-
-    function setBatch3Deal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_d, uint256 _s_x0_lgs)
-        internal
-    {
-        batch3Records_[_a][_b][_sid] = Batch3Record({
-            d: _s_d,
-            x0_lgs: _s_x0_lgs
-        });
-        sessionRecords_[_a][_b][_sid] = SessionRecord({
-            submitAt: now,
-            mode: TradeMode.BATCH3,
-            stat: TradeStat.DEAL
-        });
-
-        // transfer
-        settleBalance(_b, _a, _price);
-
-        emit OnBatch3Deal(_a, _b, _sid, _s_d, _s_x0_lgs);
-        emit OnDeal(_a, _b, _sid, TradeMode.BATCH3, _price);
     }
 
     function setVRFDeal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_r)
@@ -578,23 +510,6 @@ contract PODEX {
         }
 
         return check_sigma_vw == sigma_vw;
-    }
-
-    function vrfyProofBatch3(
-        uint256[2] memory _r_u0d,
-        uint256[2] memory  _r_u0_x0_lgs,
-        uint256 _s_d, uint256 _s_x0_lgs
-    )
-        public
-        view
-        returns (bool)
-    {
-        (uint256 _u1_x, uint256 _u1_y) = publicVar_.getEccPubU1(0);
-        G1Point memory _check = scalarMul(_u1_x, _u1_y, _s_d);
-        require(_r_u0d[0] == _check.X && _r_u0d[1] == _check.Y, "wrong d");
-        _check = scalarMul(_u1_x, _u1_y, _s_x0_lgs);
-        require(_r_u0_x0_lgs[0] == _check.X && _r_u0_x0_lgs[1] == _check.Y, "wrong x0");
-        return true;
     }
 
     function vrfyProofVRF(
@@ -725,15 +640,6 @@ contract PODEX {
         return checkSig(addr, hash, sig);
     }
 
-    function checkSigBatch3(address addr, Batch3Receipt memory r1, bytes memory sig)
-        internal
-        pure
-        returns (bool)
-    {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.u0_x0_lgs.X, r1.u0_x0_lgs.Y, r1.u0d.X, r1.u0d.Y, r1.price, r1.expireAt));
-        return checkSig(addr, hash, sig);
-    }
-
     function checkSigVRF(address addr, VRFReceipt memory r1, bytes memory sig)
         internal
         pure
@@ -797,21 +703,6 @@ contract PODEX {
     {
         Batch2Record memory _record = batch2Records_[_a][_b][_sid];
         seed0 = _record.seed0;
-        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
-    }
-
-    function getRecordBatch3(address _a, address _b, uint256 _sid)
-        public
-        view
-        returns (
-            uint256 d,
-            uint256 x0_lgs,
-            uint256 submitAt
-        )
-    {
-        Batch3Record memory _record = batch3Records_[_a][_b][_sid];
-        d = _record.d;
-        x0_lgs = _record.x0_lgs;
         submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 

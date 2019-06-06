@@ -1,2 +1,2 @@
-abigen --abi abi/PODEX.abi --pkg main --type PODEX --out abi/PODEX.go
-echo "update to abi/PODEX.go"
+abigen --abi abi/zkPoDExchange.abi --pkg main --type zkPoDExchange --out abi/zkPoDExchange.go
+echo "update to abi/zkPoDExchange.go"
