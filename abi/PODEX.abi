@@ -1,0 +1,1114 @@
+[
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "publicVar_",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "buyerDeposits_",
+		"outputs": [
+			{
+				"name": "value",
+				"type": "uint256"
+			},
+			{
+				"name": "unDepositAt",
+				"type": "uint256"
+			},
+			{
+				"name": "pendingCnt",
+				"type": "uint256"
+			},
+			{
+				"name": "stat",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "s_",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "t3",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "bulletins_",
+		"outputs": [
+			{
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"name": "size",
+				"type": "uint64"
+			},
+			{
+				"name": "s",
+				"type": "uint64"
+			},
+			{
+				"name": "n",
+				"type": "uint64"
+			},
+			{
+				"name": "sigma_mkl_root",
+				"type": "uint256"
+			},
+			{
+				"name": "vrf_meta_digest",
+				"type": "uint256"
+			},
+			{
+				"name": "pledge_value",
+				"type": "uint256"
+			},
+			{
+				"name": "unDepositAt",
+				"type": "uint256"
+			},
+			{
+				"name": "blt_type",
+				"type": "uint8"
+			},
+			{
+				"name": "stat",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "t1",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "t4",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_publicVar",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_mode",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"name": "_price",
+				"type": "uint256"
+			}
+		],
+		"name": "OnDeal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_seed0",
+				"type": "bytes32"
+			}
+		],
+		"name": "OnBatch1Key",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch1Claim",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_price",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch1Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_seed0",
+				"type": "bytes32"
+			}
+		],
+		"name": "OnBatch2Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_d",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_x0_lgs",
+				"type": "uint256"
+			}
+		],
+		"name": "OnBatch3Deal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_r",
+				"type": "uint256"
+			}
+		],
+		"name": "OnVRFDeal",
+		"type": "event"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_size",
+				"type": "uint64"
+			},
+			{
+				"name": "_s",
+				"type": "uint64"
+			},
+			{
+				"name": "_n",
+				"type": "uint64"
+			},
+			{
+				"name": "_sigma_mkl_root",
+				"type": "uint256"
+			},
+			{
+				"name": "_vrf_meta_digest",
+				"type": "uint256"
+			},
+			{
+				"name": "_blt_type",
+				"type": "uint256"
+			}
+		],
+		"name": "publish",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_bltKey",
+				"type": "bytes32"
+			}
+		],
+		"name": "unPublish",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_to",
+				"type": "address"
+			}
+		],
+		"name": "buyerDeposit",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_to",
+				"type": "address"
+			}
+		],
+		"name": "buyerUnDeposit",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_bltKey",
+				"type": "bytes32"
+			}
+		],
+		"name": "withdrawA",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_to",
+				"type": "address"
+			}
+		],
+		"name": "withdrawB",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "_k_mkl_root",
+				"type": "bytes32"
+			},
+			{
+				"name": "_count",
+				"type": "uint64"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_sig",
+				"type": "bytes"
+			}
+		],
+		"name": "submitProofBatch1",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_i",
+				"type": "uint64"
+			},
+			{
+				"name": "_j",
+				"type": "uint64"
+			},
+			{
+				"name": "_tx",
+				"type": "uint256"
+			},
+			{
+				"name": "_ty",
+				"type": "uint256"
+			},
+			{
+				"name": "_mkl_path",
+				"type": "bytes32[]"
+			},
+			{
+				"name": "_sCnt",
+				"type": "uint64"
+			}
+		],
+		"name": "claimBatch1",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "settleBatch1Deal",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "_sCnt",
+				"type": "uint64"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "_sigma_vw",
+				"type": "uint256"
+			},
+			{
+				"name": "_count",
+				"type": "uint64"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_sig",
+				"type": "bytes"
+			}
+		],
+		"name": "submitProofBatch2",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_s_d",
+				"type": "uint256"
+			},
+			{
+				"name": "_s_x0_lgs",
+				"type": "uint256"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_r_u0_x0_lgs",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_r_u0d",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_sig",
+				"type": "bytes"
+			}
+		],
+		"name": "submitProofBatch3",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_s_r",
+				"type": "uint256"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_g_exp_r",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_sig",
+				"type": "bytes"
+			}
+		],
+		"name": "submitProofVRF",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "count",
+				"type": "uint64"
+			},
+			{
+				"name": "s",
+				"type": "uint64"
+			},
+			{
+				"name": "seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "sigma_vw",
+				"type": "uint256"
+			}
+		],
+		"name": "vrfyProofBatch2",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_r_u0d",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_r_u0_x0_lgs",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_s_d",
+				"type": "uint256"
+			},
+			{
+				"name": "_s_x0_lgs",
+				"type": "uint256"
+			}
+		],
+		"name": "vrfyProofBatch3",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_g_exp_r",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_s_r",
+				"type": "uint256"
+			}
+		],
+		"name": "vrfyProofVRF",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_x",
+				"type": "bytes32"
+			},
+			{
+				"name": "_y",
+				"type": "bytes32"
+			},
+			{
+				"name": "_ij",
+				"type": "uint64"
+			},
+			{
+				"name": "_ns",
+				"type": "uint64"
+			},
+			{
+				"name": "_root",
+				"type": "bytes32"
+			},
+			{
+				"name": "_mkl_path",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "vrfyPath",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_x",
+				"type": "bytes32"
+			},
+			{
+				"name": "_y",
+				"type": "bytes32"
+			}
+		],
+		"name": "hashInSha3",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_x",
+				"type": "bytes32"
+			},
+			{
+				"name": "_y",
+				"type": "uint64"
+			}
+		],
+		"name": "hashInSha3",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "seed",
+				"type": "bytes32"
+			},
+			{
+				"name": "index",
+				"type": "uint64"
+			}
+		],
+		"name": "chain",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_n",
+				"type": "uint256"
+			}
+		],
+		"name": "log2ub",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getSessionRecord",
+		"outputs": [
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			},
+			{
+				"name": "mode",
+				"type": "uint8"
+			},
+			{
+				"name": "stat",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getRecordBatch1",
+		"outputs": [
+			{
+				"name": "seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "seed2",
+				"type": "bytes32"
+			},
+			{
+				"name": "k_mkl_root",
+				"type": "bytes32"
+			},
+			{
+				"name": "count",
+				"type": "uint64"
+			},
+			{
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"name": "expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getRecordBatch2",
+		"outputs": [
+			{
+				"name": "seed0",
+				"type": "bytes32"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getRecordBatch3",
+		"outputs": [
+			{
+				"name": "d",
+				"type": "uint256"
+			},
+			{
+				"name": "x0_lgs",
+				"type": "uint256"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getRecordVRF",
+		"outputs": [
+			{
+				"name": "r",
+				"type": "uint256"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
