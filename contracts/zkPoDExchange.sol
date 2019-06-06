@@ -167,16 +167,16 @@ contract zkPoDExchange {
         }
         require(bulletins_[_bltKey].owner == address(0) || bulletins_[_bltKey].stat == DepositStat.CANCELED, "blt occupied");
         Bulletin memory file = Bulletin({
-             owner: msg.sender,
-             size: _size,
-             s: _s,
-             n: _n,
-             sigma_mkl_root: _sigma_mkl_root,
-             vrf_meta_digest: _vrf_meta_digest,
-             pledge_value: msg.value,
-             unDepositAt: 0,
-             blt_type: _bltType,
-             stat: DepositStat.OK
+            owner: msg.sender,
+            size: _size,
+            s: _s,
+            n: _n,
+            sigma_mkl_root: _sigma_mkl_root,
+            vrf_meta_digest: _vrf_meta_digest,
+            pledge_value: msg.value,
+            unDepositAt: 0,
+            blt_type: _bltType,
+            stat: DepositStat.OK
         });
         bulletins_[_bltKey] = file;
     }

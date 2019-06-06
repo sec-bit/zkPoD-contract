@@ -2,10 +2,12 @@
   "scripts": {
     "test": "truffle test",
     "genABI": "truffle compile && node scripts/getABI.js",
-    "genWrapper": "npm run genABI && scripts/gen_wrapper.sh"
+    "genWrapper": "npm run genABI && scripts/gen_wrapper.sh",
+    "lint:contracts": "node_modules/.bin/solium -d contracts/ --fix-dry-run"
   },
   "dependencies": {
     "eth-gas-reporter": "^0.2.0",
+    "ethlint": "^1.2.4",
     "truffle-assertions": "^0.9.0",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3": "^1.0.0-beta.55"

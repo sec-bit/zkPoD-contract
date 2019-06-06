@@ -2,6 +2,16 @@
 
 Smart contracts for *zkPoD Decentralized Exchange*.
 
+## ABI & Wrapper
+
+### ABI JSON File
+
+- [*zkPoDExchange.abi*](abi/zkPoDExchange.abi)
+
+### Go Wrapper
+
+- [*zkPoDExchange.go*](abi/zkPoDExchange.go)
+
 ## Usage & Development
 
 ### Build
@@ -28,6 +38,12 @@ npm run genWrapper
 
 ```
 npm run test
+```
+
+### Lint
+
+```
+npm run lint:contracts
 ```
 
 ### Deploy On Ropsten
