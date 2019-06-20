@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "truffle test",
-    "genABI": "truffle compile && node scripts/getABI.js",
+    "genABI": "rm -rf build && truffle compile && node scripts/getABI.js",
     "genWrapper": "npm run genABI && scripts/gen_wrapper.sh",
     "lint:contracts": "node_modules/.bin/solium -d contracts/ --fix-dry-run"
   },

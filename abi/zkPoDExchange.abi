@@ -25,7 +25,7 @@
 				"type": "address"
 			}
 		],
-		"name": "buyerDeposits_",
+		"name": "bobDeposits_",
 		"outputs": [
 			{
 				"name": "value",
@@ -226,7 +226,7 @@
 				"type": "bytes32"
 			}
 		],
-		"name": "OnBatch1Key",
+		"name": "OnComplaintKey",
 		"type": "event"
 	},
 	{
@@ -248,7 +248,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "OnBatch1Claim",
+		"name": "OnComplaintClaim",
 		"type": "event"
 	},
 	{
@@ -275,7 +275,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "OnBatch1Deal",
+		"name": "OnComplaintDeal",
 		"type": "event"
 	},
 	{
@@ -302,7 +302,7 @@
 				"type": "bytes32"
 			}
 		],
-		"name": "OnBatch2Deal",
+		"name": "OnAtomicSwapDeal",
 		"type": "event"
 	},
 	{
@@ -388,7 +388,7 @@
 				"type": "address"
 			}
 		],
-		"name": "buyerDeposit",
+		"name": "bobDeposit",
 		"outputs": [],
 		"payable": true,
 		"stateMutability": "payable",
@@ -402,7 +402,7 @@
 				"type": "address"
 			}
 		],
-		"name": "buyerUnDeposit",
+		"name": "bobUnDeposit",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -476,7 +476,7 @@
 				"type": "bytes"
 			}
 		],
-		"name": "submitProofBatch1",
+		"name": "submitProofComplaint",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -518,7 +518,7 @@
 				"type": "uint64"
 			}
 		],
-		"name": "claimBatch1",
+		"name": "claimComplaint",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -540,7 +540,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "settleBatch1Deal",
+		"name": "settleComplaintDeal",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -590,7 +590,7 @@
 				"type": "bytes"
 			}
 		],
-		"name": "submitProofBatch2",
+		"name": "submitProofAtomicSwap",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -632,191 +632,6 @@
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "count",
-				"type": "uint64"
-			},
-			{
-				"name": "s",
-				"type": "uint64"
-			},
-			{
-				"name": "seed0",
-				"type": "bytes32"
-			},
-			{
-				"name": "seed2",
-				"type": "bytes32"
-			},
-			{
-				"name": "sigma_vw",
-				"type": "uint256"
-			}
-		],
-		"name": "vrfyProofBatch2",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_g_exp_r",
-				"type": "uint256[2]"
-			},
-			{
-				"name": "_s_r",
-				"type": "uint256"
-			}
-		],
-		"name": "vrfyProofVRF",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_x",
-				"type": "bytes32"
-			},
-			{
-				"name": "_y",
-				"type": "bytes32"
-			},
-			{
-				"name": "_ij",
-				"type": "uint64"
-			},
-			{
-				"name": "_ns",
-				"type": "uint64"
-			},
-			{
-				"name": "_root",
-				"type": "bytes32"
-			},
-			{
-				"name": "_mkl_path",
-				"type": "bytes32[]"
-			}
-		],
-		"name": "vrfyPath",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_x",
-				"type": "bytes32"
-			},
-			{
-				"name": "_y",
-				"type": "bytes32"
-			}
-		],
-		"name": "hashInSha3",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_x",
-				"type": "bytes32"
-			},
-			{
-				"name": "_y",
-				"type": "uint64"
-			}
-		],
-		"name": "hashInSha3",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "seed",
-				"type": "bytes32"
-			},
-			{
-				"name": "index",
-				"type": "uint64"
-			}
-		],
-		"name": "chain",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_n",
-				"type": "uint256"
-			}
-		],
-		"name": "log2ub",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -870,7 +685,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "getRecordBatch1",
+		"name": "getRecordComplaint",
 		"outputs": [
 			{
 				"name": "seed0",
@@ -921,7 +736,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "getRecordBatch2",
+		"name": "getRecordAtomicSwap",
 		"outputs": [
 			{
 				"name": "seed0",

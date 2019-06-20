@@ -6,6 +6,19 @@ import "./lib/ECDSA.sol";
 
 contract zkPoDExchange {
 
+    /*
+    ## Bulletin Type
+        - plain
+        - table
+    ## Trade Mode
+        - complaint
+        - atomic-swap
+        - vrf-query
+    ## Character
+        - Alice
+        - Bob
+    */
+
     struct Bulletin {
         address owner;
         uint64 size;
@@ -28,7 +41,7 @@ contract zkPoDExchange {
 
     /* Receipt Struct */
 
-    struct Batch1Receipt {
+    struct ComplaintReceipt {
         uint256 sid;
         address from;
         bytes32 seed2;
@@ -38,7 +51,7 @@ contract zkPoDExchange {
         uint256 expireAt;
     }
 
-    struct Batch2Receipt {
+    struct AtomicSwapReceipt {
         uint256 sid;
         address from;
         bytes32 seed2;
@@ -63,12 +76,12 @@ contract zkPoDExchange {
         TradeStat stat;
     }
 
-    struct Batch1Record {
+    struct ComplaintRecord {
         bytes32 seed0;
-        Batch1Receipt receipt;
+        ComplaintReceipt receipt;
     }
 
-    struct Batch2Record {
+    struct AtomicSwapRecord {
         bytes32 seed0;
     }
 
@@ -103,8 +116,8 @@ contract zkPoDExchange {
     }
 
     enum TradeMode {
-        BATCH1,
-        BATCH2,
+        COMPLAINT,
+        ATOMIC_SWAP,
         VRF
     }
 
@@ -112,17 +125,17 @@ contract zkPoDExchange {
 
     mapping (bytes32 => Bulletin) public bulletins_;
     // B => A => Deposit
-    mapping (address => mapping(address => Deposit)) public buyerDeposits_;
+    mapping (address => mapping(address => Deposit)) public bobDeposits_;
     // A => B => sid => Record
     mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
-    mapping (address => mapping(address => mapping(uint256 => Batch1Record))) internal batch1Records_;
-    mapping (address => mapping(address => mapping(uint256 => Batch2Record))) internal batch2Records_;
+    mapping (address => mapping(address => mapping(uint256 => ComplaintRecord))) internal complaintRecords_;
+    mapping (address => mapping(address => mapping(uint256 => AtomicSwapRecord))) internal atomicSwapRecords_;
     mapping (address => mapping(address => mapping(uint256 => VRFRecord))) internal vrfRecords_;
 
     /* Variables */
     uint256 public t1 = 8 hours; // B must wait for t1 to withdraw after unDeposit
     // uint256 public t2 = 12 hours; // For receipt, not set in contract
-    uint256 public t3 = 24 hours; // B must claim in t3 after A submitProofBatch1 or A'll get paid after t3
+    uint256 public t3 = 24 hours; // B must claim in t3 after A submitProofComplaint or A'll get paid after t3
     uint256 public t4 = 3 days; // A must wait for t4 after unPublish
 
     uint64 public s_ = 65;
@@ -132,10 +145,10 @@ contract zkPoDExchange {
 
     /* Events */
     event OnDeal(address indexed _a, address indexed _b, uint256 indexed _sid, TradeMode _mode, uint256 _price);
-    event OnBatch1Key(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
-    event OnBatch1Claim(address indexed _a, address indexed _b, uint256 indexed _sid);
-    event OnBatch1Deal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _price);
-    event OnBatch2Deal(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
+    event OnComplaintKey(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
+    event OnComplaintClaim(address indexed _a, address indexed _b, uint256 indexed _sid);
+    event OnComplaintDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _price);
+    event OnAtomicSwapDeal(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
     event OnVRFDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _r);
 
     /* Debug Events */
@@ -189,23 +202,23 @@ contract zkPoDExchange {
         bulletins_[_bltKey].unDepositAt = now;
     }
 
-    function buyerDeposit(address _to)
+    function bobDeposit(address _to)
         public
         payable
     {
-        buyerDeposits_[msg.sender][_to].value = buyerDeposits_[msg.sender][_to].value + msg.value;
-        if (buyerDeposits_[msg.sender][_to].stat != DepositStat.OK) {
-            buyerDeposits_[msg.sender][_to].stat = DepositStat.OK;
+        bobDeposits_[msg.sender][_to].value = bobDeposits_[msg.sender][_to].value + msg.value;
+        if (bobDeposits_[msg.sender][_to].stat != DepositStat.OK) {
+            bobDeposits_[msg.sender][_to].stat = DepositStat.OK;
         }
     }
 
-    function buyerUnDeposit(address _to)
+    function bobUnDeposit(address _to)
         public
     {
-        require(buyerDeposits_[msg.sender][_to].pendingCnt == 0, "pending not allowed");
-        require(buyerDeposits_[msg.sender][_to].stat == DepositStat.OK, "wrong stat");
-        buyerDeposits_[msg.sender][_to].stat = DepositStat.CANCELING;
-        buyerDeposits_[msg.sender][_to].unDepositAt = now;
+        require(bobDeposits_[msg.sender][_to].pendingCnt == 0, "pending not allowed");
+        require(bobDeposits_[msg.sender][_to].stat == DepositStat.OK, "wrong stat");
+        bobDeposits_[msg.sender][_to].stat = DepositStat.CANCELING;
+        bobDeposits_[msg.sender][_to].unDepositAt = now;
     }
 
     function withdrawA(bytes32 _bltKey)
@@ -224,19 +237,19 @@ contract zkPoDExchange {
     function withdrawB(address _to)
         public
     {
-        require(buyerDeposits_[msg.sender][_to].stat == DepositStat.CANCELING, "wrong stat");
-        require(now - buyerDeposits_[msg.sender][_to].unDepositAt > t1, "be patient");
+        require(bobDeposits_[msg.sender][_to].stat == DepositStat.CANCELING, "wrong stat");
+        require(now - bobDeposits_[msg.sender][_to].unDepositAt > t1, "be patient");
         // transfer
-        uint256 _value = buyerDeposits_[msg.sender][_to].value;
-        buyerDeposits_[msg.sender][_to].value = 0;
-        buyerDeposits_[msg.sender][_to].stat == DepositStat.CANCELED;
+        uint256 _value = bobDeposits_[msg.sender][_to].value;
+        bobDeposits_[msg.sender][_to].value = 0;
+        bobDeposits_[msg.sender][_to].stat == DepositStat.CANCELED;
         msg.sender.transfer(_value);
     }
 
     /* Core Functions - Submit Proof */
 
-    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
-    function submitProofBatch1
+    // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
+    function submitProofComplaint
     (
         bytes32 _seed0,
         // receipt
@@ -254,7 +267,7 @@ contract zkPoDExchange {
     {
         vrfyCommon(_b, _sid, _expireAt);
 
-        Batch1Receipt memory _receipt = Batch1Receipt({
+        ComplaintReceipt memory _receipt = ComplaintReceipt({
             sid: _sid,
             from: _b,
             seed2: _seed2,
@@ -264,55 +277,55 @@ contract zkPoDExchange {
             expireAt: _expireAt
         });
 
-        require(checkSigBatch1(_b, _receipt, _sig), "wrong sig");
+        require(checkSigComplaint(_b, _receipt, _sig), "wrong sig");
 
-        setBatch1Key(msg.sender, _b, _sid, _receipt, _seed0);
+        setComplaintKey(msg.sender, _b, _sid, _receipt, _seed0);
     }
 
-    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
-    function claimBatch1(address _a, uint256 _sid, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
+    // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
+    function claimComplaint(address _a, uint256 _sid, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
         public
     {
         require(sessionRecords_[_a][msg.sender][_sid].stat == TradeStat.WAIT, "wrong stat");
         require(now - sessionRecords_[_a][msg.sender][_sid].submitAt < t3, "timeout");
         // loadReceipt
-        Batch1Record memory _record = batch1Records_[_a][msg.sender][_sid];
-        require(vrfyProofBatch1(_i, _j, _sCnt, _tx, _ty, _record, _mkl_path), "invalid proof");
+        ComplaintRecord memory _record = complaintRecords_[_a][msg.sender][_sid];
+        require(vrfyProofComplaint(_i, _j, _sCnt, _tx, _ty, _record, _mkl_path), "invalid proof");
 
         // return back money
         sessionRecords_[_a][msg.sender][_sid].stat = TradeStat.CLAIMED;
-        uint256 _value = buyerDeposits_[msg.sender][_a].value;
-        buyerDeposits_[msg.sender][_a].value = 0;
+        uint256 _value = bobDeposits_[msg.sender][_a].value;
+        bobDeposits_[msg.sender][_a].value = 0;
         msg.sender.transfer(_value);
 
         // TODO: panish evil A
-        buyerDeposits_[msg.sender][_a].pendingCnt -= 1;
+        bobDeposits_[msg.sender][_a].pendingCnt -= 1;
 
-        emit OnBatch1Claim(_a, msg.sender, _sid);
+        emit OnComplaintClaim(_a, msg.sender, _sid);
     }
 
-    // mode: plain (range_pod/ot_range_pod), table (ot_batch_pod/batch_pod)
+    // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
     // TODO: discount if b confirm order before timeout
-    function settleBatch1Deal(address payable _a, address _b, uint256 _sid)
+    function settleComplaintDeal(address payable _a, address _b, uint256 _sid)
         public
     {
         require(sessionRecords_[_a][_b][_sid].stat == TradeStat.WAIT, "wrong stat");
         require(now - sessionRecords_[_a][_b][_sid].submitAt >= t3, "timeout");
 
-        uint256 _value = batch1Records_[_a][_b][_sid].receipt.price;
+        uint256 _value = complaintRecords_[_a][_b][_sid].receipt.price;
 
         // transfer
         settleBalance(_b, _a, _value);
 
         sessionRecords_[_a][_b][_sid].stat == TradeStat.DEAL;
-        buyerDeposits_[_b][_a].pendingCnt -= 1;
+        bobDeposits_[_b][_a].pendingCnt -= 1;
 
-        emit OnBatch1Deal(_a, _b, _sid, _value);
-        emit OnDeal(_a, _b, _sid, TradeMode.BATCH1, _value);
+        emit OnComplaintDeal(_a, _b, _sid, _value);
+        emit OnDeal(_a, _b, _sid, TradeMode.COMPLAINT, _value);
     }
 
-    // mode: plain (TODO), table (batch2_pod)
-    function submitProofBatch2
+    // mode: plain (atomic_swap_pod), table (atomic_swap_pod)
+    function submitProofAtomicSwap
     (
         bytes32 _seed0,
         uint64 _sCnt,
@@ -331,7 +344,7 @@ contract zkPoDExchange {
     {
         vrfyCommon(_b, _sid, _expireAt);
 
-        Batch2Receipt memory _receipt = Batch2Receipt({
+        AtomicSwapReceipt memory _receipt = AtomicSwapReceipt({
             sid: _sid,
             from: _b,
             seed2: _seed2,
@@ -341,10 +354,10 @@ contract zkPoDExchange {
             expireAt: _expireAt
         });
 
-        require(checkSigBatch2(_b, _receipt, _sig), "wrong sig");
-        require(vrfyProofBatch2(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
+        require(checkSigAtomicSwap(_b, _receipt, _sig), "wrong sig");
+        require(vrfyProofAtomicSwap(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
 
-        setBatch2Deal(msg.sender, _b, _sid, _price, _seed0);
+        setAtomicSwapDeal(msg.sender, _b, _sid, _price, _seed0);
     }
 
     // mode: table (vrf_query/ot_vrf_query)
@@ -383,46 +396,46 @@ contract zkPoDExchange {
     function settleBalance(address _b, address payable _a, uint256 _value)
         internal
     {
-        uint256 _balance = buyerDeposits_[_b][_a].value;
+        uint256 _balance = bobDeposits_[_b][_a].value;
         require(_balance >= _value, "short balance");
-        buyerDeposits_[_b][_a].value = _balance - _value;
+        bobDeposits_[_b][_a].value = _balance - _value;
         _a.transfer(_value);
     }
 
-    function setBatch1Key(address _a, address _b, uint256 _sid, Batch1Receipt memory _receipt, bytes32 _seed0)
+    function setComplaintKey(address _a, address _b, uint256 _sid, ComplaintReceipt memory _receipt, bytes32 _seed0)
         internal
     {
-        batch1Records_[_a][_b][_sid] = Batch1Record({
+        complaintRecords_[_a][_b][_sid] = ComplaintRecord({
             seed0: _seed0,
             receipt: _receipt
         });
         sessionRecords_[_a][_b][_sid] = SessionRecord({
             submitAt: now,
-            mode: TradeMode.BATCH1,
+            mode: TradeMode.COMPLAINT,
             stat: TradeStat.WAIT
         });
-        buyerDeposits_[_b][_a].pendingCnt += 1;
+        bobDeposits_[_b][_a].pendingCnt += 1;
 
-        emit OnBatch1Key(_a, _b, _sid, _seed0);
+        emit OnComplaintKey(_a, _b, _sid, _seed0);
     }
 
-    function setBatch2Deal(address payable _a, address _b, uint256 _sid, uint256 _price, bytes32 _seed0)
+    function setAtomicSwapDeal(address payable _a, address _b, uint256 _sid, uint256 _price, bytes32 _seed0)
         internal
     {
-        batch2Records_[_a][_b][_sid] = Batch2Record({
+        atomicSwapRecords_[_a][_b][_sid] = AtomicSwapRecord({
             seed0: _seed0
         });
         sessionRecords_[_a][_b][_sid] = SessionRecord({
             submitAt: now,
-            mode: TradeMode.BATCH2,
+            mode: TradeMode.ATOMIC_SWAP,
             stat: TradeStat.DEAL
         });
 
         // transfer
         settleBalance(_b, _a, _price);
 
-        emit OnBatch2Deal(_a, _b, _sid, _seed0);
-        emit OnDeal(_a, _b, _sid, TradeMode.BATCH2, _price);
+        emit OnAtomicSwapDeal(_a, _b, _sid, _seed0);
+        emit OnDeal(_a, _b, _sid, TradeMode.ATOMIC_SWAP, _price);
     }
 
     function setVRFDeal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_r)
@@ -450,15 +463,15 @@ contract zkPoDExchange {
         internal
     {
         require(sessionRecords_[msg.sender][_b][_sid].submitAt == 0, "not new");
-        // require(now < _expireAt, "expired");
-        DepositStat _stat = buyerDeposits_[_b][msg.sender].stat;
+        // require(now < _expireAt, "expired"); // TODO: uncomment this
+        DepositStat _stat = bobDeposits_[_b][msg.sender].stat;
         require(_stat != DepositStat.CANCELED, "deposit canceled");
         if (_stat == DepositStat.CANCELING) {
-            buyerDeposits_[_b][msg.sender].stat = DepositStat.OK;
+            bobDeposits_[_b][msg.sender].stat = DepositStat.OK;
         }
     }
 
-    function vrfyProofBatch1(uint64 _i, uint64 _j, uint64 _sCnt, uint256 _tx, uint256 _ty, Batch1Record memory _record, bytes32[] memory _mkl_path)
+    function vrfyProofComplaint(uint64 _i, uint64 _j, uint64 _sCnt, uint256 _tx, uint256 _ty, ComplaintRecord memory _record, bytes32[] memory _mkl_path)
         internal
         view
         returns (bool)
@@ -479,12 +492,12 @@ contract zkPoDExchange {
         return true;
     }
 
-    function vrfyProofBatch2(
+    function vrfyProofAtomicSwap(
         uint64 count, uint64 s,
         bytes32 seed0, bytes32 seed2,
         uint sigma_vw
     )
-        public
+        internal
         pure
         returns(bool)
     {
@@ -516,7 +529,7 @@ contract zkPoDExchange {
         uint256[2] memory _g_exp_r,
         uint256 _s_r
     )
-        public
+        internal
         view
         returns (bool)
     {
@@ -527,7 +540,7 @@ contract zkPoDExchange {
     }
 
     function vrfyPath(bytes32 _x, bytes32 _y, uint64 _ij, uint64 _ns, bytes32 _root, bytes32[] memory _mkl_path)
-        public
+        internal
         pure
         returns (bool)
     {
@@ -552,7 +565,7 @@ contract zkPoDExchange {
     /* Helper Functions - Calculation */
 
     function hashInSha3(bytes32 _x, bytes32 _y)
-        public
+        internal
         pure
         returns (bytes32)
     {
@@ -560,7 +573,7 @@ contract zkPoDExchange {
     }
 
     function hashInSha3(bytes32 _x, uint64 _y)
-        public
+        internal
         pure
         returns (bytes32)
     {
@@ -568,7 +581,7 @@ contract zkPoDExchange {
     }
 
     function chain(bytes32 seed, uint64 index)
-        public
+        internal
         pure
         returns (uint256)
     {
@@ -595,7 +608,7 @@ contract zkPoDExchange {
     }
 
     function log2ub(uint256 _n)
-        public
+        internal
         pure
         returns (uint256)
     {
@@ -622,7 +635,7 @@ contract zkPoDExchange {
 
     /* Helper Functions - Receipt Signature */
 
-    function checkSigBatch1(address addr, Batch1Receipt memory r1, bytes memory sig)
+    function checkSigComplaint(address addr, ComplaintReceipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
@@ -631,7 +644,7 @@ contract zkPoDExchange {
         return checkSig(addr, hash, sig);
     }
 
-    function checkSigBatch2(address addr, Batch2Receipt memory r1, bytes memory sig)
+    function checkSigAtomicSwap(address addr, AtomicSwapReceipt memory r1, bytes memory sig)
         internal
         pure
         returns (bool)
@@ -670,7 +683,7 @@ contract zkPoDExchange {
         stat = _sRecord.stat;
     }
 
-    function getRecordBatch1(address _a, address _b, uint256 _sid)
+    function getRecordComplaint(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -683,7 +696,7 @@ contract zkPoDExchange {
             uint256 submitAt
         )
     {
-        Batch1Record memory _record = batch1Records_[_a][_b][_sid];
+        ComplaintRecord memory _record = complaintRecords_[_a][_b][_sid];
         seed0 = _record.seed0;
         seed2 = _record.receipt.seed2;
         k_mkl_root = _record.receipt.k_mkl_root;
@@ -693,7 +706,7 @@ contract zkPoDExchange {
         submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
-    function getRecordBatch2(address _a, address _b, uint256 _sid)
+    function getRecordAtomicSwap(address _a, address _b, uint256 _sid)
         public
         view
         returns (
@@ -701,7 +714,7 @@ contract zkPoDExchange {
             uint256 submitAt
         )
     {
-        Batch2Record memory _record = batch2Records_[_a][_b][_sid];
+        AtomicSwapRecord memory _record = atomicSwapRecords_[_a][_b][_sid];
         seed0 = _record.seed0;
         submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }

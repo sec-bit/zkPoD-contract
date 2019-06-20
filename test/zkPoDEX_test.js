@@ -9,8 +9,8 @@ contract("zkPoDExchange", async (accounts) => {
 
     let zkPoDEX;
 
-    let seller = accounts[0];
-    let buyer = accounts[1];
+    let alice = accounts[0];
+    let bob = accounts[1];
 
     before(async () => {
         zkPoDEX = await zkPoDExchange.deployed();
@@ -43,7 +43,7 @@ contract("zkPoDExchange", async (accounts) => {
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _size }, { t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root });
         let bulletin = await zkPoDEX.bulletins_(_bltKey);
 
-        assert.equal(bulletin.owner, seller, "wrong owner");
+        assert.equal(bulletin.owner, alice, "wrong owner");
         assert.equal(bulletin.size, blt.size, "wrong size");
         assert.equal(bulletin.s, blt.s, "wrong s");
         assert.equal(bulletin.n, blt.n, "wrong n");
@@ -73,7 +73,7 @@ contract("zkPoDExchange", async (accounts) => {
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root }, { t: 'uint256', v: _vrf_meta_digest });
         let bulletin = await zkPoDEX.bulletins_(_bltKey);
 
-        assert.equal(bulletin.owner, seller, "wrong owner");
+        assert.equal(bulletin.owner, alice, "wrong owner");
         assert.equal(bulletin.s, blt.s, "wrong s");
         assert.equal(bulletin.n, blt.n, "wrong n");
         assert.equal(bulletin.sigma_mkl_root, web3.utils.toBN(_sigma_mkl_root).toString(), "wrong sigma_mkl_root");
@@ -87,14 +87,14 @@ contract("zkPoDExchange", async (accounts) => {
         );
     });
 
-    it("should submitProofBatch1 correctly (for not evil)", async () => {
-        let path = testdataPath + "/batch1/not_evil";
+    it("should submitProofComplaint correctly (for not evil)", async () => {
+        let path = testdataPath + "/complaint/not_evil";
         let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
         let secret = JSON.parse(fs.readFileSync(path + "/secret"));
 
         // let _sessionId = Math.random().toString().slice(2, 17);
         let _sessionId = 0;
-        let _from = buyer;
+        let _from = bob;
         let _seed0 = "0x" + secret.s;
         let _seed2 = "0x" + receipt.s;
         let _k_mkl_root = "0x" + receipt.k;
@@ -103,41 +103,41 @@ contract("zkPoDExchange", async (accounts) => {
         let _expireAt = 0;
 
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
-        let signature = await web3.eth.sign(hash, buyer);
+        let signature = await web3.eth.sign(hash, bob);
         // console.log("signature:", signature);
 
         // before submit
-        let bdpsitBefore = await zkPoDEX.buyerDeposits_(buyer, seller);
+        let bdpsitBefore = await zkPoDEX.bobDeposits_(bob, alice);
 
         // session record
-        let _result = await zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller});
+        let _result = await zkPoDEX.submitProofComplaint(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice});
         let _txblock = await web3.eth.getBlock(_result.receipt.blockNumber);
-        let _sRecord = await zkPoDEX.getSessionRecord(seller, buyer, _sessionId);
+        let _sRecord = await zkPoDEX.getSessionRecord(alice, bob, _sessionId);
         assert.equal(_sRecord.submitAt.toNumber(), _txblock.timestamp, "wrong time");
         assert.equal(_sRecord.mode, 0, "wrong mode");
         assert.equal(_sRecord.stat, 1, "wrong stat");
 
         // event
-        await truffleAssert.eventEmitted(_result, 'OnBatch1Key', { _a: seller, _b: buyer });
+        await truffleAssert.eventEmitted(_result, 'OnComplaintKey', { _a: alice, _b: bob });
 
-        // buyerDeposits_
-        let bdpsitAfter = await zkPoDEX.buyerDeposits_(buyer, seller);
+        // bobDeposits_
+        let bdpsitAfter = await zkPoDEX.bobDeposits_(bob, alice);
         assert.equal(bdpsitAfter.pendingCnt, bdpsitBefore.pendingCnt.toNumber()+1, "wrong pending cnt");
 
         await truffleAssert.reverts(
-            zkPoDEX.submitProofBatch1(_seed0, _sessionId, buyer, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: seller})
+            zkPoDEX.submitProofComplaint(_seed0, _sessionId, bob, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice})
         );
     });
 
 
-    it("should submitProofBatch1 correctly (for evil)", async () => {
-        let path = testdataPath + "/batch1/evil";
+    it("should submitProofComplaint correctly (for evil)", async () => {
+        let path = testdataPath + "/complaint/evil";
         let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
         let secret = JSON.parse(fs.readFileSync(path + "/secret"));
 
         // let _sessionId = Math.random().toString().slice(2, 17);
         let _sessionId = 1;
-        let _from = buyer;
+        let _from = bob;
         let _seed0 = "0x" + secret.s;
         let _seed2 = "0x" + receipt.s;
         let _k_mkl_root = "0x" + receipt.k;
@@ -146,19 +146,19 @@ contract("zkPoDExchange", async (accounts) => {
         let _expireAt = 0;
 
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
-        let signature = await web3.eth.sign(hash, buyer);
+        let signature = await web3.eth.sign(hash, bob);
 
-        await zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller });
+        await zkPoDEX.submitProofComplaint(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice });
 
 
         await truffleAssert.reverts(
-            zkPoDEX.submitProofBatch1(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: seller }),
+            zkPoDEX.submitProofComplaint(_seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice }),
             "not new"
         )
     });
 
-    it("should claimBatch1 correctly (for evil)", async () => {
-        let path = testdataPath + "/batch1/evil";
+    it("should claimComplaint correctly (for evil)", async () => {
+        let path = testdataPath + "/complaint/evil";
         let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
         let claim = JSON.parse(fs.readFileSync(path + "/claim"));
         let _sessionId = 1;
@@ -174,11 +174,11 @@ contract("zkPoDExchange", async (accounts) => {
             return '0x' + i;
         })
 
-        await zkPoDEX.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer })
+        await zkPoDEX.claimComplaint(alice, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: bob })
     });
 
-    it("should claimBatch1 fail (for not evil)", async () => {
-        let path = testdataPath + "/batch1/evil";
+    it("should claimComplaint fail (for not evil)", async () => {
+        let path = testdataPath + "/complaint/evil";
         let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
         let claim = JSON.parse(fs.readFileSync(path + "/claim"));
         let _sessionId = 0;
@@ -195,13 +195,13 @@ contract("zkPoDExchange", async (accounts) => {
         })
 
         await truffleAssert.reverts(
-            zkPoDEX.claimBatch1(seller, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: buyer }),
+            zkPoDEX.claimComplaint(alice, _sessionId, _i, _j, _tx, _ty, _mkl_path, _sCnt, { from: bob }),
             "invalid mkl proof"
         )
     });
 
-    it("should submitProofBatch2 correctly (not evil)", async () => {
-        let path = testdataPath + "/batch2/not_evil";
+    it("should submitProofAtomicSwap correctly (not evil)", async () => {
+        let path = testdataPath + "/atomic-swap/not_evil";
         let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
         let secret = JSON.parse(fs.readFileSync(path + "/secret"));
         let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
@@ -209,7 +209,7 @@ contract("zkPoDExchange", async (accounts) => {
         let _sessionId = 2;
 
         let _seed0 = "0x" + secret.s;
-        let _from = buyer;
+        let _from = bob;
         let _seed2 = "0x" + receipt.s;
         let _sigma_vw = receipt.vw;
         let _count = receipt.c;
@@ -217,15 +217,15 @@ contract("zkPoDExchange", async (accounts) => {
         let _expireAt = 0;
 
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
-        let signature = await web3.eth.sign(hash, buyer);
+        let signature = await web3.eth.sign(hash, bob);
 
-        await zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller })
+        await zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice })
 
-        await truffleAssert.reverts(zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "not new")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "not new")
     });
 
-    it("should submitProofBatch2 fail (evil)", async () => {
-        let path = testdataPath + "/batch2/evil";
+    it("should submitProofAtomicSwap fail (evil)", async () => {
+        let path = testdataPath + "/atomic-swap/evil";
         let receipt = JSON.parse(fs.readFileSync(path + "/receipt"));
         let secret = JSON.parse(fs.readFileSync(path + "/secret"));
         let bulletin = JSON.parse(fs.readFileSync(testdataPath + "/bulletin.plain.json"));
@@ -233,7 +233,7 @@ contract("zkPoDExchange", async (accounts) => {
         let _sessionId = 3;
 
         let _seed0 = "0x" + secret.s;
-        let _from = buyer;
+        let _from = bob;
         let _seed2 = "0x" + receipt.s;
         let _sigma_vw = receipt.vw;
         let _count = receipt.c;
@@ -241,9 +241,9 @@ contract("zkPoDExchange", async (accounts) => {
         let _expireAt = 0;
 
         let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
-        let signature = await web3.eth.sign(hash, buyer);
+        let signature = await web3.eth.sign(hash, bob);
 
-        await truffleAssert.reverts(zkPoDEX.submitProofBatch2(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: seller }), "invalid proof")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "invalid proof")
     });
 
     // it("", async () => {
