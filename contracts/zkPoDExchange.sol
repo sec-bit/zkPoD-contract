@@ -3,8 +3,9 @@ pragma experimental ABIEncoderV2;
 
 import "./interface/PublicVarInterface.sol";
 import "./lib/ECDSA.sol";
+import "./Mimc.sol";
 
-contract zkPoDExchange {
+contract zkPoDExchange is Mimc {
 
     /*
     ## Bulletin Type
@@ -13,6 +14,7 @@ contract zkPoDExchange {
     ## Trade Mode
         - complaint
         - atomic-swap
+        - atomic-swap-vc
         - vrf-query
     ## Character
         - Alice
@@ -61,6 +63,14 @@ contract zkPoDExchange {
         uint256 expireAt;
     }
 
+    struct AtomicSwapVCReceipt {
+        uint256 sid;
+        address from;
+        uint256 seed0_mimc3_digest;
+        uint256 price;
+        uint256 expireAt;
+    }
+
     struct VRFReceipt {
         uint256 sid;
         address from;
@@ -83,6 +93,11 @@ contract zkPoDExchange {
 
     struct AtomicSwapRecord {
         bytes32 seed0;
+    }
+
+    struct AtomicSwapVCRecord {
+        uint256 seed0;
+        uint256 seed0_rand;
     }
 
     struct VRFRecord {
@@ -118,6 +133,7 @@ contract zkPoDExchange {
     enum TradeMode {
         COMPLAINT,
         ATOMIC_SWAP,
+        ATOMIC_SWAP_VC,
         VRF
     }
 
@@ -130,6 +146,7 @@ contract zkPoDExchange {
     mapping (address => mapping(address => mapping(uint256 => SessionRecord))) internal sessionRecords_;
     mapping (address => mapping(address => mapping(uint256 => ComplaintRecord))) internal complaintRecords_;
     mapping (address => mapping(address => mapping(uint256 => AtomicSwapRecord))) internal atomicSwapRecords_;
+    mapping (address => mapping(address => mapping(uint256 => AtomicSwapVCRecord))) internal atomicSwapVCRecords_;
     mapping (address => mapping(address => mapping(uint256 => VRFRecord))) internal vrfRecords_;
 
     /* Variables */
@@ -149,6 +166,7 @@ contract zkPoDExchange {
     event OnComplaintClaim(address indexed _a, address indexed _b, uint256 indexed _sid);
     event OnComplaintDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _price);
     event OnAtomicSwapDeal(address indexed _a, address indexed _b, uint256 indexed _sid, bytes32 _seed0);
+    event OnAtomicSwapVCDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _seed0, uint256 _seed0_rand);
     event OnVRFDeal(address indexed _a, address indexed _b, uint256 indexed _sid, uint256 _r);
 
     /* Debug Events */
@@ -360,6 +378,38 @@ contract zkPoDExchange {
         setAtomicSwapDeal(msg.sender, _b, _sid, _price, _seed0);
     }
 
+    // mode: plain (atomic_swap_pod_vc), table (atomic_swap_pod_vc)
+    function submitProofAtomicSwapVC
+    (
+        uint256 _seed0,
+        uint256 _seed0_rand,
+        // receipt
+        uint256 _sid,
+        address _b,
+        uint256 _seed0_mimc3_digest,
+        uint256 _price,
+        uint256 _expireAt,
+        // sig
+        bytes memory _sig
+    )
+        public
+    {
+        vrfyCommon(_b, _sid, _expireAt);
+
+        AtomicSwapVCReceipt memory _receipt = AtomicSwapVCReceipt({
+            sid: _sid,
+            from: _b,
+            seed0_mimc3_digest: _seed0_mimc3_digest,
+            price: _price,
+            expireAt: _expireAt
+        });
+
+        require(checkSigAtomicSwapVC(_b, _receipt, _sig), "wrong sig");
+        require(vrfyProofAtomicSwapVC(_seed0, _seed0_rand, _seed0_mimc3_digest), "invalid proof");
+
+        setAtomicSwapVCDeal(msg.sender, _b, _sid, _price, _seed0, _seed0_rand);
+    }
+
     // mode: table (vrf_query/ot_vrf_query)
     function submitProofVRF
     (
@@ -438,6 +488,26 @@ contract zkPoDExchange {
         emit OnDeal(_a, _b, _sid, TradeMode.ATOMIC_SWAP, _price);
     }
 
+    function setAtomicSwapVCDeal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _seed0, uint256 _seed0_rand)
+        internal
+    {
+        atomicSwapVCRecords_[_a][_b][_sid] = AtomicSwapVCRecord({
+            seed0: _seed0,
+            seed0_rand: _seed0_rand
+        });
+        sessionRecords_[_a][_b][_sid] = SessionRecord({
+            submitAt: now,
+            mode: TradeMode.ATOMIC_SWAP_VC,
+            stat: TradeStat.DEAL
+        });
+
+        // transfer
+        settleBalance(_b, _a, _price);
+
+        emit OnAtomicSwapVCDeal(_a, _b, _sid, _seed0, _seed0_rand);
+        emit OnDeal(_a, _b, _sid, TradeMode.ATOMIC_SWAP_VC, _price);
+    }
+
     function setVRFDeal(address payable _a, address _b, uint256 _sid, uint256 _price, uint256 _s_r)
         internal
     {
@@ -463,7 +533,7 @@ contract zkPoDExchange {
         internal
     {
         require(sessionRecords_[msg.sender][_b][_sid].submitAt == 0, "not new");
-        // require(now < _expireAt, "expired"); // TODO: uncomment this
+        require(now < _expireAt, "expired");
         DepositStat _stat = bobDeposits_[_b][msg.sender].stat;
         require(_stat != DepositStat.CANCELED, "deposit canceled");
         if (_stat == DepositStat.CANCELING) {
@@ -523,6 +593,17 @@ contract zkPoDExchange {
         }
 
         return check_sigma_vw == sigma_vw;
+    }
+
+    function vrfyProofAtomicSwapVC(
+        uint256 _seed0, uint256 _seed0_rand,
+        uint256 _seed0_mimc3_digest
+    )
+        internal
+        view
+        returns(bool)
+    {
+        return _seed0_mimc3_digest == mimc3(_seed0, _seed0_rand);
     }
 
     function vrfyProofVRF(
@@ -589,6 +670,33 @@ contract zkPoDExchange {
         return uint256(_ret) % GEN_ORDER;
     }
 
+    function box(uint256 v)
+        internal
+        pure
+        returns (uint256)
+    {
+        return mulmod(mulmod(v, v, GEN_ORDER), v, GEN_ORDER);
+    }
+
+    function mimc3(uint256 _left, uint256 _right)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256[3] memory x;
+
+        x[0] = addmod(_right, box(addmod(_left, mimc3Const_[0], GEN_ORDER)), GEN_ORDER);
+        x[1] = addmod(_left, box(addmod(x[0], mimc3Const_[1], GEN_ORDER)), GEN_ORDER);
+
+        for (uint256 i = 2; i < 64; i++) {
+            x[2] = addmod(x[0], box(addmod(x[1], mimc3Const_[i], GEN_ORDER)), GEN_ORDER);
+            x[0] = x[1];
+            x[1] = x[2];
+        }
+
+        return x[2];
+    }
+
     function scalarMul(uint256 _x, uint256 _y, uint256 _s)
         internal
         view
@@ -653,6 +761,16 @@ contract zkPoDExchange {
         return checkSig(addr, hash, sig);
     }
 
+    function checkSigAtomicSwapVC(address addr, AtomicSwapVCReceipt memory r1, bytes memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed0_mimc3_digest, r1.price, r1.expireAt));
+        return checkSig(addr, hash, sig);
+    }
+
+
     function checkSigVRF(address addr, VRFReceipt memory r1, bytes memory sig)
         internal
         pure
@@ -716,6 +834,21 @@ contract zkPoDExchange {
     {
         AtomicSwapRecord memory _record = atomicSwapRecords_[_a][_b][_sid];
         seed0 = _record.seed0;
+        submitAt = sessionRecords_[_a][_b][_sid].submitAt;
+    }
+
+    function getRecordAtomicSwapVC(address _a, address _b, uint256 _sid)
+        public
+        view
+        returns (
+            uint256 seed0,
+            uint256 seed0_rand,
+            uint256 submitAt
+        )
+    {
+        AtomicSwapVCRecord memory _record = atomicSwapVCRecords_[_a][_b][_sid];
+        seed0 = _record.seed0;
+        seed0_rand = _record.seed0_rand;
         submitAt = sessionRecords_[_a][_b][_sid].submitAt;
     }
 
