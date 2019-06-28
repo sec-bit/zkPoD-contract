@@ -2,9 +2,10 @@ pragma solidity ^0.5.0;
 contract Mimc {
 
     // MimcConst("mimc_3_const", kMimc3Round)
+    // Precomputed hash
     // Keep it in main contract to reduce call gas in loop.
     // We could also split mimc3 functions into a new contract to reduce deployment gas.
-    
+
     uint256[64] internal mimc3Const_ = [
         806819478237510237567354597320409664430515519040431905243665468685412236750,
         6410623443705099914357149307464584813026094095182290505951916050493465669411,

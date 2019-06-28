@@ -1,5 +1,4 @@
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
 
 import "./interface/PublicVarInterface.sol";
 import "./lib/ECDSA.sol";
@@ -30,6 +29,7 @@ contract zkPoDExchange is Mimc {
         uint256 vrf_meta_digest;
         uint256 pledge_value;
         uint256 unDepositAt;
+        uint256 pendingCnt;
         BltType blt_type;
         DepositStat stat;
     }
@@ -88,6 +88,7 @@ contract zkPoDExchange is Mimc {
 
     struct ComplaintRecord {
         bytes32 seed0;
+        bytes32 bltKey;
         ComplaintReceipt receipt;
     }
 
@@ -206,6 +207,7 @@ contract zkPoDExchange is Mimc {
             vrf_meta_digest: _vrf_meta_digest,
             pledge_value: msg.value,
             unDepositAt: 0,
+            pendingCnt: 0,
             blt_type: _bltType,
             stat: DepositStat.OK
         });
@@ -216,6 +218,7 @@ contract zkPoDExchange is Mimc {
         public
     {
         require(bulletins_[_bltKey].stat == DepositStat.OK, "wrong stat");
+        require(bulletins_[_bltKey].pendingCnt == 0, "pending not allowed");
         bulletins_[_bltKey].stat = DepositStat.CANCELING;
         bulletins_[_bltKey].unDepositAt = now;
     }
@@ -224,31 +227,34 @@ contract zkPoDExchange is Mimc {
         public
         payable
     {
-        bobDeposits_[msg.sender][_to].value = bobDeposits_[msg.sender][_to].value + msg.value;
-        if (bobDeposits_[msg.sender][_to].stat != DepositStat.OK) {
-            bobDeposits_[msg.sender][_to].stat = DepositStat.OK;
+        Deposit storage deposit = bobDeposits_[msg.sender][_to];
+        deposit.value = deposit.value + msg.value;
+        if (deposit.stat != DepositStat.OK) {
+            deposit.stat = DepositStat.OK;
         }
     }
 
     function bobUnDeposit(address _to)
         public
     {
-        require(bobDeposits_[msg.sender][_to].pendingCnt == 0, "pending not allowed");
-        require(bobDeposits_[msg.sender][_to].stat == DepositStat.OK, "wrong stat");
-        bobDeposits_[msg.sender][_to].stat = DepositStat.CANCELING;
-        bobDeposits_[msg.sender][_to].unDepositAt = now;
+        Deposit storage deposit = bobDeposits_[msg.sender][_to];
+        require(deposit.pendingCnt == 0, "pending not allowed");
+        require(deposit.stat == DepositStat.OK, "wrong stat");
+        deposit.stat = DepositStat.CANCELING;
+        deposit.unDepositAt = now;
     }
 
     function withdrawA(bytes32 _bltKey)
         public
     {
-        require(bulletins_[_bltKey].owner == msg.sender, "not owner");
-        require(bulletins_[_bltKey].stat == DepositStat.CANCELING, "wrong stat");
-        require(now - bulletins_[_bltKey].unDepositAt > t4, "be patient");
+        Bulletin memory bulletin = bulletins_[_bltKey];
+        require(bulletin.owner == msg.sender, "not owner");
+        require(bulletin.stat == DepositStat.CANCELING, "wrong stat");
+        require(now - bulletin.unDepositAt > t4, "be patient");
         // transfer
-        uint256 _value = bulletins_[_bltKey].pledge_value;
-        bulletins_[_bltKey].pledge_value = 0;
-        bulletins_[_bltKey].stat == DepositStat.CANCELED;
+        uint256 _value = bulletin.pledge_value;
+        bulletin.pledge_value = 0;
+        bulletin.stat == DepositStat.CANCELED;
         msg.sender.transfer(_value);
     }
 
@@ -269,6 +275,7 @@ contract zkPoDExchange is Mimc {
     // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
     function submitProofComplaint
     (
+        bytes32 _bltKey,
         bytes32 _seed0,
         // receipt
         uint256 _sid,
@@ -297,7 +304,7 @@ contract zkPoDExchange is Mimc {
 
         require(checkSigComplaint(_b, _receipt, _sig), "wrong sig");
 
-        setComplaintKey(msg.sender, _b, _sid, _receipt, _seed0);
+        setComplaintKey(_bltKey, msg.sender, _b, _sid, _receipt, _seed0);
     }
 
     // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
@@ -312,12 +319,18 @@ contract zkPoDExchange is Mimc {
 
         // return back money
         sessionRecords_[_a][msg.sender][_sid].stat = TradeStat.CLAIMED;
+
         uint256 _value = bobDeposits_[msg.sender][_a].value;
         bobDeposits_[msg.sender][_a].value = 0;
         msg.sender.transfer(_value);
 
-        // TODO: panish evil A
+        // panish alice
+        _value = bulletins_[_record.bltKey].pledge_value;
+        bulletins_[_record.bltKey].pledge_value = 0;
+        msg.sender.transfer(_value);
+
         bobDeposits_[msg.sender][_a].pendingCnt -= 1;
+        bulletins_[_record.bltKey].pendingCnt -= 1;
 
         emit OnComplaintClaim(_a, msg.sender, _sid);
     }
@@ -327,16 +340,19 @@ contract zkPoDExchange is Mimc {
     function settleComplaintDeal(address payable _a, address _b, uint256 _sid)
         public
     {
-        require(sessionRecords_[_a][_b][_sid].stat == TradeStat.WAIT, "wrong stat");
-        require(now - sessionRecords_[_a][_b][_sid].submitAt >= t3, "timeout");
+        SessionRecord storage sessionRecord = sessionRecords_[_a][_b][_sid];
+        require(sessionRecord.stat == TradeStat.WAIT, "wrong stat");
+        require(now - sessionRecord.submitAt >= t3, "timeout");
 
-        uint256 _value = complaintRecords_[_a][_b][_sid].receipt.price;
+        ComplaintRecord storage cRecord = complaintRecords_[_a][_b][_sid];
+        uint256 _value = cRecord.receipt.price;
 
         // transfer
         settleBalance(_b, _a, _value);
 
-        sessionRecords_[_a][_b][_sid].stat == TradeStat.DEAL;
+        sessionRecord.stat == TradeStat.DEAL;
         bobDeposits_[_b][_a].pendingCnt -= 1;
+        bulletins_[cRecord.bltKey].pendingCnt -= 1;
 
         emit OnComplaintDeal(_a, _b, _sid, _value);
         emit OnDeal(_a, _b, _sid, TradeMode.COMPLAINT, _value);
@@ -452,11 +468,12 @@ contract zkPoDExchange is Mimc {
         _a.transfer(_value);
     }
 
-    function setComplaintKey(address _a, address _b, uint256 _sid, ComplaintReceipt memory _receipt, bytes32 _seed0)
+    function setComplaintKey(bytes32 _bltKey, address _a, address _b, uint256 _sid, ComplaintReceipt memory _receipt, bytes32 _seed0)
         internal
     {
         complaintRecords_[_a][_b][_sid] = ComplaintRecord({
             seed0: _seed0,
+            bltKey: _bltKey,
             receipt: _receipt
         });
         sessionRecords_[_a][_b][_sid] = SessionRecord({
@@ -465,6 +482,7 @@ contract zkPoDExchange is Mimc {
             stat: TradeStat.WAIT
         });
         bobDeposits_[_b][_a].pendingCnt += 1;
+        bulletins_[_bltKey].pendingCnt += 1;
 
         emit OnComplaintKey(_a, _b, _sid, _seed0);
     }
@@ -541,7 +559,12 @@ contract zkPoDExchange is Mimc {
         }
     }
 
-    function vrfyProofComplaint(uint64 _i, uint64 _j, uint64 _sCnt, uint256 _tx, uint256 _ty, ComplaintRecord memory _record, bytes32[] memory _mkl_path)
+    function vrfyProofComplaint(
+        uint64 _i, uint64 _j, uint64 _sCnt,
+        uint256 _tx, uint256 _ty,
+        ComplaintRecord memory _record,
+        bytes32[] memory _mkl_path
+    )
         internal
         view
         returns (bool)
@@ -715,6 +738,7 @@ contract zkPoDExchange is Mimc {
         require (success, "failed");
     }
 
+    // solium-disable security/no-assign-params
     function log2ub(uint256 _n)
         internal
         pure
