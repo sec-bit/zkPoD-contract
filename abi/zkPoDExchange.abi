@@ -119,6 +119,10 @@
 				"type": "uint256"
 			},
 			{
+				"name": "pendingCnt",
+				"type": "uint256"
+			},
+			{
 				"name": "blt_type",
 				"type": "uint8"
 			},
@@ -325,6 +329,38 @@
 			},
 			{
 				"indexed": false,
+				"name": "_seed0",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_seed0_rand",
+				"type": "uint256"
+			}
+		],
+		"name": "OnAtomicSwapVCDeal",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
 				"name": "_r",
 				"type": "uint256"
 			}
@@ -439,6 +475,10 @@
 	{
 		"constant": false,
 		"inputs": [
+			{
+				"name": "_bltKey",
+				"type": "bytes32"
+			},
 			{
 				"name": "_seed0",
 				"type": "bytes32"
@@ -600,6 +640,48 @@
 		"constant": false,
 		"inputs": [
 			{
+				"name": "_seed0",
+				"type": "uint256"
+			},
+			{
+				"name": "_seed0_rand",
+				"type": "uint256"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_seed0_mimc3_digest",
+				"type": "uint256"
+			},
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireAt",
+				"type": "uint256"
+			},
+			{
+				"name": "_sig",
+				"type": "bytes"
+			}
+		],
+		"name": "submitProofAtomicSwapVC",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
 				"name": "_s_r",
 				"type": "uint256"
 			},
@@ -741,6 +823,41 @@
 			{
 				"name": "seed0",
 				"type": "bytes32"
+			},
+			{
+				"name": "submitAt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_a",
+				"type": "address"
+			},
+			{
+				"name": "_b",
+				"type": "address"
+			},
+			{
+				"name": "_sid",
+				"type": "uint256"
+			}
+		],
+		"name": "getRecordAtomicSwapVC",
+		"outputs": [
+			{
+				"name": "seed0",
+				"type": "uint256"
+			},
+			{
+				"name": "seed0_rand",
+				"type": "uint256"
 			},
 			{
 				"name": "submitAt",
