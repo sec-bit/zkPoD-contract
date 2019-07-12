@@ -95,6 +95,7 @@ contract("zkPoDExchange", async (accounts) => {
         // let _sessionId = Math.random().toString().slice(2, 17);
         let _sessionId = 0;
         let _from = bob;
+        let _to = alice;
         let _seed0 = "0x" + secret.s;
         let _seed2 = "0x" + receipt.s;
         let _k_mkl_root = "0x" + receipt.k;
@@ -112,7 +113,7 @@ contract("zkPoDExchange", async (accounts) => {
 
         await zkPoDEX.bobDeposit(alice, {from: bob, value: _price});
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'bytes32', v: _bltKey }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
         // console.log("signature:", signature);
 
@@ -120,7 +121,7 @@ contract("zkPoDExchange", async (accounts) => {
         let bdpsitBefore = await zkPoDEX.bobDeposits_(bob, alice);
 
         // session record
-        let _result = await zkPoDEX.submitProofComplaint(_bltKey, _seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice});
+        let _result = await zkPoDEX.submitProofComplaint(_seed0, _sessionId, [_from, _to], _bltKey, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice});
         let _txblock = await web3.eth.getBlock(_result.receipt.blockNumber);
         let _sRecord = await zkPoDEX.getSessionRecord(alice, bob, _sessionId);
         assert.equal(_sRecord.submitAt.toNumber(), _txblock.timestamp, "wrong time");
@@ -135,7 +136,7 @@ contract("zkPoDExchange", async (accounts) => {
         assert.equal(bdpsitAfter.pendingCnt, bdpsitBefore.pendingCnt.toNumber()+1, "wrong pending cnt");
 
         await truffleAssert.reverts(
-            zkPoDEX.submitProofComplaint(_bltKey, _seed0, _sessionId, bob, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice})
+            zkPoDEX.submitProofComplaint(_seed0, _sessionId, [_from, _to], _bltKey, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, {from: alice})
         );
     });
 
@@ -148,6 +149,7 @@ contract("zkPoDExchange", async (accounts) => {
         // let _sessionId = Math.random().toString().slice(2, 17);
         let _sessionId = 1;
         let _from = bob;
+        let _to = alice;
         let _seed0 = "0x" + secret.s;
         let _seed2 = "0x" + receipt.s;
         let _k_mkl_root = "0x" + receipt.k;
@@ -165,14 +167,14 @@ contract("zkPoDExchange", async (accounts) => {
         // let _blt_type = 0;
         let _bltKey = web3.utils.soliditySha3({ t: 'uint64', v: _size }, { t: 'uint64', v: _s }, { t: 'uint64', v: _n }, { t: 'uint256', v: _sigma_mkl_root });
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'bytes32', v: _bltKey }, { t: 'bytes32', v: _seed2 }, { t: 'bytes32', v: _k_mkl_root }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
 
-        await zkPoDEX.submitProofComplaint(_bltKey, _seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice });
+        await zkPoDEX.submitProofComplaint(_seed0, _sessionId, [_from, _to], _bltKey, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice });
 
 
         await truffleAssert.reverts(
-            zkPoDEX.submitProofComplaint(_bltKey, _seed0, _sessionId, _from, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice }),
+            zkPoDEX.submitProofComplaint(_seed0, _sessionId, [_from, _to], _bltKey, _seed2, _k_mkl_root, _count, _price, _expireAt, signature, { from: alice }),
             "not new"
         )
     });
@@ -230,6 +232,7 @@ contract("zkPoDExchange", async (accounts) => {
 
         let _seed0 = "0x" + secret.s;
         let _from = bob;
+        let _to = alice;
         let _seed2 = "0x" + receipt.s;
         let _sigma_vw = receipt.vw;
         let _count = receipt.c;
@@ -238,12 +241,12 @@ contract("zkPoDExchange", async (accounts) => {
 
         await zkPoDEX.bobDeposit(alice, {from: bob, value: _price});
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
 
-        await zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice })
+        await zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, [_from, _to], _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice })
 
-        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "not new")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, [_from, _to], _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "not new")
     });
 
     it("should submitProofAtomicSwap fail (evil)", async () => {
@@ -256,6 +259,7 @@ contract("zkPoDExchange", async (accounts) => {
 
         let _seed0 = "0x" + secret.s;
         let _from = bob;
+        let _to = alice;
         let _seed2 = "0x" + receipt.s;
         let _sigma_vw = receipt.vw;
         let _count = receipt.c;
@@ -264,10 +268,10 @@ contract("zkPoDExchange", async (accounts) => {
 
         await zkPoDEX.bobDeposit(alice, {from: bob, value: _price});
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'bytes32', v: _seed2 }, { t: 'uint256', v: _sigma_vw }, { t: 'uint64', v: _count }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
 
-        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, _from, _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "invalid proof")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwap(_seed0, _sCnt, _sessionId, [_from, _to], _seed2, _sigma_vw, _count, _price, _expireAt, signature, { from: alice }), "invalid proof")
     });
 
     it("should submitProofAtomicSwapVC correctly (not evil)", async () => {
@@ -280,18 +284,19 @@ contract("zkPoDExchange", async (accounts) => {
         let _seed0 = secret.s;
         let _seed0_rand = secret.r;
         let _from = bob;
+        let _to = alice;
         let _seed0_mimc3_digest = receipt.d;
         let _price = web3.utils.toWei('0.5', 'ether');
         let _expireAt = Math.floor(Date.now() / 1000) + 3600;
 
         await zkPoDEX.bobDeposit(alice, {from: bob, value: _price});
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'uint256', v: _seed0_mimc3_digest }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'uint256', v: _seed0_mimc3_digest }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
 
-        await zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, _from, _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice })
+        await zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, [_from, _to], _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice })
 
-        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, _from, _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice }), "not new")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, [_from, _to], _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice }), "not new")
     });
 
     it("should submitProofAtomicSwapVC fail (evil)", async () => {
@@ -304,16 +309,17 @@ contract("zkPoDExchange", async (accounts) => {
         let _seed0 = secret.s;
         let _seed0_rand = secret.r;
         let _from = bob;
+        let _to = alice;
         let _seed0_mimc3_digest = receipt.d;
         let _price = web3.utils.toWei('0.5', 'ether');
         let _expireAt = Math.floor(Date.now() / 1000) + 3600;
 
         await zkPoDEX.bobDeposit(alice, {from: bob, value: _price});
 
-        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'uint256', v: _seed0_mimc3_digest }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
+        let hash = web3.utils.soliditySha3({ t: 'uint256', v: _sessionId }, { t: 'address', v: _from }, { t: 'address', v: _to }, { t: 'uint256', v: _seed0_mimc3_digest }, { t: 'uint256', v: _price }, { t: 'uint256', v: _expireAt });
         let signature = await web3.eth.sign(hash, bob);
 
-        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, _from, _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice }), "invalid proof")
+        await truffleAssert.reverts(zkPoDEX.submitProofAtomicSwapVC(_seed0, _seed0_rand, _sessionId, [_from, _to], _seed0_mimc3_digest, _price, _expireAt, signature, { from: alice }), "invalid proof")
     });
 
     // it("", async () => {
