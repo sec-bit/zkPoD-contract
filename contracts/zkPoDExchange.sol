@@ -46,6 +46,8 @@ contract zkPoDExchange is Mimc {
     struct ComplaintReceipt {
         uint256 sid;
         address from;
+        address to;
+        bytes32 bltKey;
         bytes32 seed2;
         bytes32 k_mkl_root;
         uint64 count;
@@ -56,6 +58,7 @@ contract zkPoDExchange is Mimc {
     struct AtomicSwapReceipt {
         uint256 sid;
         address from;
+        address to;
         bytes32 seed2;
         uint256 sigma_vw;
         uint64 count;
@@ -66,6 +69,7 @@ contract zkPoDExchange is Mimc {
     struct AtomicSwapVCReceipt {
         uint256 sid;
         address from;
+        address to;
         uint256 seed0_mimc3_digest;
         uint256 price;
         uint256 expireAt;
@@ -74,6 +78,7 @@ contract zkPoDExchange is Mimc {
     struct VRFReceipt {
         uint256 sid;
         address from;
+        address to;
         G1Point g_exp_r;
         uint256 price;
         uint256 expireAt;
@@ -88,7 +93,6 @@ contract zkPoDExchange is Mimc {
 
     struct ComplaintRecord {
         bytes32 seed0;
-        bytes32 bltKey;
         ComplaintReceipt receipt;
     }
 
@@ -258,16 +262,17 @@ contract zkPoDExchange is Mimc {
         msg.sender.transfer(_value);
     }
 
-    function withdrawB(address _to)
+    function withdrawB(address _a)
         public
     {
-        require(bobDeposits_[msg.sender][_to].stat == DepositStat.CANCELING, "wrong stat");
-        require(now - bobDeposits_[msg.sender][_to].unDepositAt > t1, "be patient");
+        address payable _b = msg.sender;
+        require(bobDeposits_[_b][_a].stat == DepositStat.CANCELING, "wrong stat");
+        require(now - bobDeposits_[_b][_a].unDepositAt > t1, "be patient");
         // transfer
-        uint256 _value = bobDeposits_[msg.sender][_to].value;
-        bobDeposits_[msg.sender][_to].value = 0;
-        bobDeposits_[msg.sender][_to].stat == DepositStat.CANCELED;
-        msg.sender.transfer(_value);
+        uint256 _value = bobDeposits_[_b][_a].value;
+        bobDeposits_[_b][_a].value = 0;
+        bobDeposits_[_b][_a].stat == DepositStat.CANCELED;
+        _b.transfer(_value);
     }
 
     /* Core Functions - Submit Proof */
@@ -275,11 +280,11 @@ contract zkPoDExchange is Mimc {
     // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
     function submitProofComplaint
     (
-        bytes32 _bltKey,
         bytes32 _seed0,
         // receipt
         uint256 _sid,
-        address _b,
+        address[2] memory _addrs, // 0: _b, 1: _a
+        bytes32 _bltKey,
         bytes32 _seed2,
         bytes32 _k_mkl_root,
         uint64 _count,
@@ -290,11 +295,15 @@ contract zkPoDExchange is Mimc {
     )
         public
     {
-        vrfyCommon(_b, _sid, _expireAt);
+        vrfyCommon(_addrs[0], _addrs[1], _sid, _expireAt);
+
+        require(bulletins_[_bltKey].owner == _addrs[1], "owner not match");
 
         ComplaintReceipt memory _receipt = ComplaintReceipt({
             sid: _sid,
-            from: _b,
+            from: _addrs[0],
+            to: _addrs[1],
+            bltKey: _bltKey,
             seed2: _seed2,
             k_mkl_root: _k_mkl_root,
             count: _count,
@@ -302,37 +311,38 @@ contract zkPoDExchange is Mimc {
             expireAt: _expireAt
         });
 
-        require(checkSigComplaint(_b, _receipt, _sig), "wrong sig");
+        require(checkSigComplaint(_addrs[0], _receipt, _sig), "wrong sig");
 
-        setComplaintKey(_bltKey, msg.sender, _b, _sid, _receipt, _seed0);
+        setComplaintKey(msg.sender, _addrs[0], _sid, _receipt, _seed0);
     }
 
     // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
     function claimComplaint(address _a, uint256 _sid, uint64 _i, uint64 _j, uint256 _tx, uint256 _ty, bytes32[] memory _mkl_path, uint64 _sCnt)
         public
     {
-        require(sessionRecords_[_a][msg.sender][_sid].stat == TradeStat.WAIT, "wrong stat");
-        require(now - sessionRecords_[_a][msg.sender][_sid].submitAt < t3, "timeout");
+        address payable _b = msg.sender;
+        require(sessionRecords_[_a][_b][_sid].stat == TradeStat.WAIT, "wrong stat");
+        require(now - sessionRecords_[_a][_b][_sid].submitAt < t3, "timeout");
         // loadReceipt
-        ComplaintRecord memory _record = complaintRecords_[_a][msg.sender][_sid];
+        ComplaintRecord memory _record = complaintRecords_[_a][_b][_sid];
         require(vrfyProofComplaint(_i, _j, _sCnt, _tx, _ty, _record, _mkl_path), "invalid proof");
 
         // return back money
-        sessionRecords_[_a][msg.sender][_sid].stat = TradeStat.CLAIMED;
+        sessionRecords_[_a][_b][_sid].stat = TradeStat.CLAIMED;
 
-        uint256 _value = bobDeposits_[msg.sender][_a].value;
-        bobDeposits_[msg.sender][_a].value = 0;
-        msg.sender.transfer(_value);
+        uint256 _value = bobDeposits_[_b][_a].value;
+        bobDeposits_[_b][_a].value = 0;
+        _b.transfer(_value);
 
         // panish alice
-        _value = bulletins_[_record.bltKey].pledge_value;
-        bulletins_[_record.bltKey].pledge_value = 0;
-        msg.sender.transfer(_value);
+        _value = bulletins_[_record.receipt.bltKey].pledge_value;
+        bulletins_[_record.receipt.bltKey].pledge_value = 0;
+        _b.transfer(_value);
 
-        bobDeposits_[msg.sender][_a].pendingCnt -= 1;
-        bulletins_[_record.bltKey].pendingCnt -= 1;
+        bobDeposits_[_b][_a].pendingCnt -= 1;
+        bulletins_[_record.receipt.bltKey].pendingCnt -= 1;
 
-        emit OnComplaintClaim(_a, msg.sender, _sid);
+        emit OnComplaintClaim(_a, _b, _sid);
     }
 
     // mode: plain (complaint_pod/ot_complaint_pod), table (complaint_pod/ot_complaint_pod)
@@ -352,7 +362,7 @@ contract zkPoDExchange is Mimc {
 
         sessionRecord.stat == TradeStat.DEAL;
         bobDeposits_[_b][_a].pendingCnt -= 1;
-        bulletins_[cRecord.bltKey].pendingCnt -= 1;
+        bulletins_[cRecord.receipt.bltKey].pendingCnt -= 1;
 
         emit OnComplaintDeal(_a, _b, _sid, _value);
         emit OnDeal(_a, _b, _sid, TradeMode.COMPLAINT, _value);
@@ -365,7 +375,7 @@ contract zkPoDExchange is Mimc {
         uint64 _sCnt,
         // receipt
         uint256 _sid,
-        address _b,
+        address[2] memory _addrs, // 0: _b, 1: _a
         bytes32 _seed2,
         uint256 _sigma_vw,
         uint64 _count,
@@ -376,11 +386,12 @@ contract zkPoDExchange is Mimc {
     )
         public
     {
-        vrfyCommon(_b, _sid, _expireAt);
+        vrfyCommon(_addrs[0], _addrs[1], _sid, _expireAt);
 
         AtomicSwapReceipt memory _receipt = AtomicSwapReceipt({
             sid: _sid,
-            from: _b,
+            from: _addrs[0],
+            to: _addrs[1],
             seed2: _seed2,
             sigma_vw: _sigma_vw,
             count: _count,
@@ -388,10 +399,10 @@ contract zkPoDExchange is Mimc {
             expireAt: _expireAt
         });
 
-        require(checkSigAtomicSwap(_b, _receipt, _sig), "wrong sig");
+        require(checkSigAtomicSwap(_addrs[0], _receipt, _sig), "wrong sig");
         require(vrfyProofAtomicSwap(_count, _sCnt, _seed0, _seed2, _sigma_vw), "invalid proof");
 
-        setAtomicSwapDeal(msg.sender, _b, _sid, _price, _seed0);
+        setAtomicSwapDeal(msg.sender, _addrs[0], _sid, _price, _seed0);
     }
 
     // mode: plain (atomic_swap_pod_vc), table (atomic_swap_pod_vc)
@@ -401,7 +412,7 @@ contract zkPoDExchange is Mimc {
         uint256 _seed0_rand,
         // receipt
         uint256 _sid,
-        address _b,
+        address[2] memory _addrs, // 0: _b, 1: _a
         uint256 _seed0_mimc3_digest,
         uint256 _price,
         uint256 _expireAt,
@@ -410,20 +421,21 @@ contract zkPoDExchange is Mimc {
     )
         public
     {
-        vrfyCommon(_b, _sid, _expireAt);
+        vrfyCommon(_addrs[0], _addrs[1], _sid, _expireAt);
 
         AtomicSwapVCReceipt memory _receipt = AtomicSwapVCReceipt({
             sid: _sid,
-            from: _b,
+            from: _addrs[0],
+            to: _addrs[1],
             seed0_mimc3_digest: _seed0_mimc3_digest,
             price: _price,
             expireAt: _expireAt
         });
 
-        require(checkSigAtomicSwapVC(_b, _receipt, _sig), "wrong sig");
+        require(checkSigAtomicSwapVC(_addrs[0], _receipt, _sig), "wrong sig");
         require(vrfyProofAtomicSwapVC(_seed0, _seed0_rand, _seed0_mimc3_digest), "invalid proof");
 
-        setAtomicSwapVCDeal(msg.sender, _b, _sid, _price, _seed0, _seed0_rand);
+        setAtomicSwapVCDeal(msg.sender, _addrs[0], _sid, _price, _seed0, _seed0_rand);
     }
 
     // mode: table (vrf_query/ot_vrf_query)
@@ -432,7 +444,7 @@ contract zkPoDExchange is Mimc {
         uint256 _s_r, // secret r
         // receipt
         uint256 _sid,
-        address _b,
+        address[2] memory _addrs, // 0: _b, 1: _a
         uint256[2] memory _g_exp_r,
         uint256 _price,
         uint256 _expireAt,
@@ -441,20 +453,21 @@ contract zkPoDExchange is Mimc {
     )
         public
     {
-        vrfyCommon(_b, _sid, _expireAt);
+        vrfyCommon(_addrs[0], _addrs[1], _sid, _expireAt);
 
         VRFReceipt memory _receipt = VRFReceipt({
             sid: _sid,
-            from: _b,
+            from: _addrs[0],
+            to: _addrs[1],
             g_exp_r: G1Point(_g_exp_r[0], _g_exp_r[1]),
             price: _price,
             expireAt: _expireAt
         });
 
-        require(checkSigVRF(_b, _receipt, _sig), "wrong sig");
+        require(checkSigVRF(_addrs[0], _receipt, _sig), "wrong sig");
         require(vrfyProofVRF(_g_exp_r, _s_r), "invalid proof");
 
-        setVRFDeal(msg.sender, _b, _sid, _price, _s_r);
+        setVRFDeal(msg.sender, _addrs[0], _sid, _price, _s_r);
     }
 
     /* Helper Functions - Settle */
@@ -468,12 +481,11 @@ contract zkPoDExchange is Mimc {
         _a.transfer(_value);
     }
 
-    function setComplaintKey(bytes32 _bltKey, address _a, address _b, uint256 _sid, ComplaintReceipt memory _receipt, bytes32 _seed0)
+    function setComplaintKey(address _a, address _b, uint256 _sid, ComplaintReceipt memory _receipt, bytes32 _seed0)
         internal
     {
         complaintRecords_[_a][_b][_sid] = ComplaintRecord({
             seed0: _seed0,
-            bltKey: _bltKey,
             receipt: _receipt
         });
         sessionRecords_[_a][_b][_sid] = SessionRecord({
@@ -482,7 +494,7 @@ contract zkPoDExchange is Mimc {
             stat: TradeStat.WAIT
         });
         bobDeposits_[_b][_a].pendingCnt += 1;
-        bulletins_[_bltKey].pendingCnt += 1;
+        bulletins_[_receipt.bltKey].pendingCnt += 1;
 
         emit OnComplaintKey(_a, _b, _sid, _seed0);
     }
@@ -547,15 +559,16 @@ contract zkPoDExchange is Mimc {
 
     /* Helper Functions - Verify Proof */
 
-    function vrfyCommon(address _b, uint256 _sid, uint256 _expireAt)
+    function vrfyCommon(address _b, address _a, uint256 _sid, uint256 _expireAt)
         internal
     {
-        require(sessionRecords_[msg.sender][_b][_sid].submitAt == 0, "not new");
+        require(_a == msg.sender, "must be a");
+        require(sessionRecords_[_a][_b][_sid].submitAt == 0, "not new");
         require(now < _expireAt, "expired");
-        DepositStat _stat = bobDeposits_[_b][msg.sender].stat;
+        DepositStat _stat = bobDeposits_[_b][_a].stat;
         require(_stat != DepositStat.CANCELED, "deposit canceled");
         if (_stat == DepositStat.CANCELING) {
-            bobDeposits_[_b][msg.sender].stat = DepositStat.OK;
+            bobDeposits_[_b][_a].stat = DepositStat.OK;
         }
     }
 
@@ -772,7 +785,7 @@ contract zkPoDExchange is Mimc {
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.bltKey, r1.seed2, r1.k_mkl_root, r1.count, r1.price, r1.expireAt));
         return checkSig(addr, hash, sig);
     }
 
@@ -781,7 +794,7 @@ contract zkPoDExchange is Mimc {
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.seed2, r1.sigma_vw, r1.count, r1.price, r1.expireAt));
         return checkSig(addr, hash, sig);
     }
 
@@ -790,7 +803,7 @@ contract zkPoDExchange is Mimc {
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.seed0_mimc3_digest, r1.price, r1.expireAt));
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.seed0_mimc3_digest, r1.price, r1.expireAt));
         return checkSig(addr, hash, sig);
     }
 
@@ -800,7 +813,7 @@ contract zkPoDExchange is Mimc {
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.g_exp_r.X, r1.g_exp_r.Y, r1.price, r1.expireAt));
         return checkSig(addr, hash, sig);
     }
 

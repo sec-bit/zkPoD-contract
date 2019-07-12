@@ -462,7 +462,7 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_to",
+				"name": "_a",
 				"type": "address"
 			}
 		],
@@ -476,10 +476,6 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_bltKey",
-				"type": "bytes32"
-			},
-			{
 				"name": "_seed0",
 				"type": "bytes32"
 			},
@@ -488,8 +484,12 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_b",
-				"type": "address"
+				"name": "_addrs",
+				"type": "address[2]"
+			},
+			{
+				"name": "_bltKey",
+				"type": "bytes32"
 			},
 			{
 				"name": "_seed2",
@@ -602,8 +602,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_b",
-				"type": "address"
+				"name": "_addrs",
+				"type": "address[2]"
 			},
 			{
 				"name": "_seed2",
@@ -652,8 +652,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_b",
-				"type": "address"
+				"name": "_addrs",
+				"type": "address[2]"
 			},
 			{
 				"name": "_seed0_mimc3_digest",
@@ -690,8 +690,8 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_b",
-				"type": "address"
+				"name": "_addrs",
+				"type": "address[2]"
 			},
 			{
 				"name": "_g_exp_r",
