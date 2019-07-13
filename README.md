@@ -62,6 +62,6 @@ truffle migrate --network ropsten
 
 ### Ropsten Testnet
 
-- *PublicVar* - [0xD7e158bb6c0ed4271397Fd046AC19168b24F8E27](https://ropsten.etherscan.io/address/0xD7e158bb6c0ed4271397Fd046AC19168b24F8E27)
-- *zkPoDExchange* - [0x9785351A7B5b58fEd191c8B306b56358CaF2C065](https://ropsten.etherscan.io/address/0x9785351A7B5b58fEd191c8B306b56358CaF2C065)
+- *PublicVar* - [0xCf06Ff284988ebDc00752bD5E87AA78f853357d7](https://ropsten.etherscan.io/address/0xCf06Ff284988ebDc00752bD5E87AA78f853357d7)
+- *zkPoDExchange* - [0x6BB3240C7a0850E99aEab96e210cbbD8b7B609D0](https://ropsten.etherscan.io/address/0x6BB3240C7a0850E99aEab96e210cbbD8b7B609D0)
 
