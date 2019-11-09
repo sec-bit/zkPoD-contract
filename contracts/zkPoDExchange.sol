@@ -455,6 +455,8 @@ contract zkPoDExchange is Mimc {
     {
         vrfyCommon(_addrs[0], _addrs[1], _sid, _expireAt);
 
+        require(_s_r < GEN_ORDER, "must in snark scalar field");
+
         VRFReceipt memory _receipt = VRFReceipt({
             sid: _sid,
             from: _addrs[0],
