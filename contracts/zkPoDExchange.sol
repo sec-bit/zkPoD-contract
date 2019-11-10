@@ -70,7 +70,9 @@ contract zkPoDExchange is Mimc {
         uint256 sid;
         address from;
         address to;
-        uint256 seed0_mimc3_digest;
+        uint256[2] h;
+        uint256[2] g;
+        uint256[2] seed0_com;
         uint256 price;
         uint256 expireAt;
     }
@@ -405,15 +407,19 @@ contract zkPoDExchange is Mimc {
         setAtomicSwapDeal(msg.sender, _addrs[0], _sid, _price, _seed0);
     }
 
+// vrs::VerifySecret(receipt.h, receipt.g, receipt.seed0_com, secret.seed0_r, secret.seed0);
+
     // mode: plain (atomic_swap_pod_vc), table (atomic_swap_pod_vc)
     function submitProofAtomicSwapVC
     (
         uint256 _seed0,
-        uint256 _seed0_rand,
+        uint256 _seed0_r,
         // receipt
         uint256 _sid,
         address[2] memory _addrs, // 0: _b, 1: _a
-        uint256 _seed0_mimc3_digest,
+        uint256[2] memory _h,
+        uint256[2] memory _g,
+        uint256[2] memory _seed0_com,
         uint256 _price,
         uint256 _expireAt,
         // sig
@@ -427,15 +433,17 @@ contract zkPoDExchange is Mimc {
             sid: _sid,
             from: _addrs[0],
             to: _addrs[1],
-            seed0_mimc3_digest: _seed0_mimc3_digest,
+            h: _h,
+            g: _g,
+            seed0_com: _seed0_com,
             price: _price,
             expireAt: _expireAt
         });
 
         require(checkSigAtomicSwapVC(_addrs[0], _receipt, _sig), "wrong sig");
-        require(vrfyProofAtomicSwapVC(_seed0, _seed0_rand, _seed0_mimc3_digest), "invalid proof");
+        require(vrfyProofAtomicSwapVC(_seed0, _seed0_r, _h, _g, _seed0_com), "invalid proof");
 
-        setAtomicSwapVCDeal(msg.sender, _addrs[0], _sid, _price, _seed0, _seed0_rand);
+        setAtomicSwapVCDeal(msg.sender, _addrs[0], _sid, _price, _seed0, _seed0_r);
     }
 
     // mode: table (vrf_query/ot_vrf_query)
@@ -633,15 +641,21 @@ contract zkPoDExchange is Mimc {
         return check_sigma_vw == sigma_vw;
     }
 
+//   return vrs::VerifySecret(receipt.h, receipt.g, receipt.seed0_com,
+                        //    secret.seed0_r, secret.seed0);
     function vrfyProofAtomicSwapVC(
-        uint256 _seed0, uint256 _seed0_rand,
-        uint256 _seed0_mimc3_digest
+        uint256 _seed0, uint256 _seed0_r,
+        uint256[2] memory _h, uint256[2] memory _g, uint256[2] memory _seed0_com
     )
         internal
         view
         returns(bool)
     {
-        return _seed0_mimc3_digest == mimc3(_seed0, _seed0_rand);
+        // key_com == h * r + g * key;
+        G1Point memory _left = scalarMul(_h[0], _h[1], _seed0_r);
+        G1Point memory _right = scalarMul(_g[0], _g[1], _seed0);
+        G1Point memory _result = pointAdd(_left.X, _left.Y, _right.X, _right.Y);
+        return (_result.X == _seed0_com[0] && _result.Y == _seed0_com[1]);
     }
 
     function vrfyProofVRF(
@@ -735,6 +749,21 @@ contract zkPoDExchange is Mimc {
         return x[2];
     }
 
+    function pointAdd(uint256 _ax, uint256 _ay, uint256 _bx, uint256 _by) internal view returns (G1Point memory r) {
+        uint[4] memory input;
+        input[0] = _ax;
+        input[1] = _ay;
+        input[2] = _bx;
+        input[3] = _by;
+        bool success;
+        assembly {
+			success := staticcall(sub(gas, 2000), 6, input, 0xc0, r, 0x60)
+            // Use "invalid" to make gas estimation work
+            switch success case 0 { invalid() }
+        }
+        require(success, "pointAdd failed");
+    }
+
     function scalarMul(uint256 _x, uint256 _y, uint256 _s)
         internal
         view
@@ -750,7 +779,7 @@ contract zkPoDExchange is Mimc {
             // Use "invalid" to make gas estimation work
             switch success case 0 { invalid() }
         }
-        require (success, "failed");
+        require (success, "scalarMul failed");
     }
 
     // solium-disable security/no-assign-params
@@ -805,7 +834,7 @@ contract zkPoDExchange is Mimc {
         pure
         returns (bool)
     {
-        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.seed0_mimc3_digest, r1.price, r1.expireAt));
+        bytes32 hash = keccak256(abi.encodePacked(r1.sid, r1.from, r1.to, r1.h[0], r1.h[1], r1.g[0], r1.g[1], r1.seed0_com[0], r1.seed0_com[1], r1.price, r1.expireAt));
         return checkSig(addr, hash, sig);
     }
 

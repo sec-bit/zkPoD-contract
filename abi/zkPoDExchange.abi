@@ -644,7 +644,7 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_seed0_rand",
+				"name": "_seed0_r",
 				"type": "uint256"
 			},
 			{
@@ -656,8 +656,16 @@
 				"type": "address[2]"
 			},
 			{
-				"name": "_seed0_mimc3_digest",
-				"type": "uint256"
+				"name": "_h",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_g",
+				"type": "uint256[2]"
+			},
+			{
+				"name": "_seed0_com",
+				"type": "uint256[2]"
 			},
 			{
 				"name": "_price",
